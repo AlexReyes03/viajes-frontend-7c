@@ -21,18 +21,40 @@ export default function RecoverOTPForm() {
               </div>
 
               <div className="bg-white position-relative z-1 px-2">
-                <div className="rounded-circle d-flex align-items-center justify-content-center border border-3" style={{ width: '24px', height: '24px', borderColor: 'var(--color-teal-tint-1)' }}></div>
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    border: '3px solid var(--color-teal-tint-1)',
+                  }}
+                ></div>
               </div>
 
               <div className="bg-white position-relative z-1 px-2">
-                <div className="rounded-circle bg-secondary bg-opacity-25" style={{ width: '24px', height: '24px' }}></div>
+                <div
+                  className="rounded-circle"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    backgroundColor: '#dee2e6',
+                  }}
+                ></div>
               </div>
             </div>
 
             <div className="d-flex justify-content-between mb-5 small fw-bold">
-              <span style={{ color: '#000' }}>Correo electrónico</span>
-              <span style={{ color: '#000' }}>Código de seguridad</span>
-              <span className="text-muted">Nueva contraseña</span>
+              <div className="text-start text-black" style={{ flex: 1 }}>
+                Correo electrónico
+              </div>
+
+              <div className="text-center text-black" style={{ flex: 1 }}>
+                Código de seguridad
+              </div>
+
+              <div className="text-end text-muted" style={{ flex: 1 }}>
+                Nueva contraseña
+              </div>
             </div>
 
             <form>

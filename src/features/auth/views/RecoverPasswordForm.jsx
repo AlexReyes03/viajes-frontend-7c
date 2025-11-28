@@ -12,7 +12,9 @@ export default function RecoverPasswordForm() {
             <h5 className="card-title fw-bold mb-4">Recupera tu cuenta</h5>
 
             <div className="d-flex align-items-center justify-content-between mb-2 position-relative">
-              <div className="position-absolute w-100" style={{ height: '2px', backgroundColor: 'var(--color-teal-tint-1)', zIndex: 0 }}></div>
+              <div className="position-absolute w-100" style={{ height: '2px', backgroundColor: '#e9ecef', zIndex: 0 }}></div>
+
+              <div className="position-absolute w-100" style={{ height: '2px', backgroundColor: 'var(--color-teal-tint-1)', zIndex: 0, left: 0 }}></div>
 
               <div className="bg-white position-relative z-1 px-2">
                 <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ width: '24px', height: '24px', backgroundColor: 'var(--color-teal-tint-1)' }}></div>
@@ -23,23 +25,54 @@ export default function RecoverPasswordForm() {
               </div>
 
               <div className="bg-white position-relative z-1 px-2">
-                <div className="rounded-circle d-flex align-items-center justify-content-center border border-3" style={{ width: '24px', height: '24px', borderColor: 'var(--color-teal-tint-1)' }}></div>
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    border: '3px solid var(--color-teal-tint-1)',
+                  }}
+                ></div>
               </div>
             </div>
 
             <div className="d-flex justify-content-between mb-5 small fw-bold">
-              <span className="text-black">Correo electrónico</span>
-              <span className="text-black">Código de seguridad</span>
-              <span className="text-black">Nueva contraseña</span>
+              <div className="text-start text-black" style={{ flex: 1 }}>
+                Correo electrónico
+              </div>
+              <div className="text-center text-black" style={{ flex: 1 }}>
+                Código de seguridad
+              </div>
+              <div className="text-end text-black" style={{ flex: 1 }}>
+                Nueva contraseña
+              </div>
             </div>
 
             <form>
               <div className="mb-3">
-                <PasswordInput id="newPassword" label="Nueva contraseña" className="w-100" placeholder="Ingrese su contraseña" />
+                <PasswordInput
+                  id="newPassword"
+                  label={
+                    <span>
+                      <i className="bi bi-lock me-2"></i>Nueva contraseña
+                    </span>
+                  }
+                  className="w-100"
+                  placeholder="Ingrese su contraseña"
+                />
               </div>
 
               <div className="mb-4">
-                <PasswordInput id="confirmPassword" label="Confirme su contraseña" className="w-100" placeholder="Confirme su contraseña" />
+                <PasswordInput
+                  id="confirmPassword"
+                  label={
+                    <span>
+                      <i className="bi bi-lock me-2"></i>Confirme su contraseña
+                    </span>
+                  }
+                  className="w-100"
+                  placeholder="Confirme su contraseña"
+                />
               </div>
 
               <div className="d-flex justify-content-end gap-3 mt-5">

@@ -19,7 +19,7 @@ export default function AuthLayout() {
     <>
       <Navbar variant={getNavbarVariant()} />
       <main
-        className="app-main"
+        className="auth-main"
         style={{
           backgroundImage: `url(${Fondo})`,
           backgroundSize: 'cover',
@@ -27,7 +27,7 @@ export default function AuthLayout() {
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="container-fluid">
+        <div className="w-100">
           <Outlet />
         </div>
       </main>

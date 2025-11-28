@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from 'primereact/button';
+import PasswordInput from '../components/PasswordInput';
 
 export default function RegisterForm() {
   return (
@@ -12,60 +13,52 @@ export default function RegisterForm() {
             <form className="row g-3">
               <div className="col-12 col-md-6">
                 <div className="form-floating">
-                  <input type="text" className="form-control" id="nombre" placeholder="Nombre" />
+                  <input type="text" className="form-control" id="nombre" placeholder="Nombre" autoComplete="off" />
                   <label htmlFor="nombre">Nombre</label>
                 </div>
               </div>
 
               <div className="col-12 col-md-6">
                 <div className="form-floating">
-                  <input type="text" className="form-control" id="apPaterno" placeholder="Apellido paterno" />
+                  <input type="text" className="form-control" id="apPaterno" placeholder="Apellido paterno" autoComplete="off" />
                   <label htmlFor="apPaterno">Apellido paterno</label>
                 </div>
               </div>
 
               <div className="col-12 col-md-6">
                 <div className="form-floating">
-                  <input type="text" className="form-control" id="apMaterno" placeholder="Apellido materno" />
+                  <input type="text" className="form-control" id="apMaterno" placeholder="Apellido materno" autoComplete="off" />
                   <label htmlFor="apMaterno">Apellido materno</label>
                 </div>
               </div>
 
               <div className="col-12 col-md-6">
                 <div className="form-floating">
-                  <input type="tel" className="form-control" id="telefono" placeholder="Número telefónico" />
+                  <input type="tel" className="form-control" id="telefono" placeholder="Número telefónico" autoComplete="off" />
                   <label htmlFor="telefono">Número telefónico</label>
                 </div>
               </div>
 
               <div className="col-12 col-md-6">
                 <div className="form-floating">
-                  <input type="text" className="form-control" id="usuario" placeholder="Usuario" />
+                  <input type="text" className="form-control" id="usuario" placeholder="Usuario" autoComplete="off" />
                   <label htmlFor="usuario">Usuario</label>
                 </div>
               </div>
 
               <div className="col-12 col-md-6">
                 <div className="form-floating">
-                  <input type="email" className="form-control" id="email" placeholder="Correo electrónico" />
+                  <input type="email" className="form-control" id="email" placeholder="Correo electrónico" autoComplete="off" />
                   <label htmlFor="email">Correo electrónico</label>
                 </div>
               </div>
 
               <div className="col-12 col-md-6">
-                <div className="form-floating position-relative">
-                  <input type="password" className="form-control" id="pass" placeholder="Contraseña" />
-                  <label htmlFor="pass">Contraseña</label>
-                  <i className="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3 text-muted" style={{ cursor: 'pointer', zIndex: 5 }}></i>
-                </div>
+                <PasswordInput id="pass" label="Contraseña" placeholder="Contraseña" />
               </div>
 
               <div className="col-12 col-md-6">
-                <div className="form-floating position-relative">
-                  <input type="password" className="form-control" id="confirmPass" placeholder="Confirmar contraseña" />
-                  <label htmlFor="confirmPass">Confirmar contraseña</label>
-                  <i className="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3 text-muted" style={{ cursor: 'pointer', zIndex: 5 }}></i>
-                </div>
+                <PasswordInput id="confirmPass" label="Confirmar contraseña" placeholder="Confirmar contraseña" />
               </div>
 
               <div className="col-12 mt-4 text-end">

@@ -101,6 +101,9 @@
 
   /* Negro */
   --color-black: #000000;
+
+  /* PrimeReact Overrides */
+  --border-radius: 12px;
 }
 
 body {
@@ -139,11 +142,39 @@ code {
   background-color: var(--color-white, #fff);
 }
 
-.app-main {
+/* Layout para Autenticación (Login, Register, Recover) */
+.auth-main {
   min-height: calc(100vh - 70px);
   display: flex;
   align-items: center;
   width: 100%;
+}
+
+/* Layout Principal de la App (Home, Dashboard, etc) */
+.app-main {
+  min-height: calc(100vh - 70px);
+  width: 100%;
+  background-color: #EDEDED;
+}
+
+/* Reglas generales de espaciado responsivo para ambos layouts */
+.auth-main,
+.app-main {
+  padding-left: 160px;
+  padding-right: 160px;
+}
+
+@media (max-width: 991px) {
+  .auth-main,
+  .app-main {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+.app-main .card {
+  background-color: #FCF7FF !important;
+  border: none;
 }
 
 .form-floating > .form-control {
@@ -154,7 +185,7 @@ code {
 .form-floating > .form-control:focus {
   background-color: #f8f9fa;
   box-shadow: none;
-  border: 1px solid var(--color-blue-tint-1);
+  border: 2px solid var(--color-blue-tint-1);
 }
 
 .btn-lime {
@@ -167,4 +198,64 @@ code {
 
 .btn-lime:hover {
   background-color: var(--color-lime-shade-2) !important;
+}
+
+.btn-teal-outlined {
+  color: var(--color-teal-tint-1) !important;
+  border-color: var(--color-teal-tint-1) !important;
+  background-color: transparent !important;
+}
+
+.btn-teal-outlined:hover {
+  background-color: rgba(8, 155, 143, 0.05) !important;
+}
+
+/* Stepper Styles */
+.stepper-line-bg {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: #e9ecef;
+  z-index: 0;
+}
+
+.stepper-line-progress {
+  position: absolute;
+  height: 2px;
+  background-color: var(--color-teal-tint-1);
+  z-index: 0;
+  left: 0;
+}
+
+.stepper-circle {
+  width: 24px;
+  height: 24px;
+}
+
+.stepper-circle-active {
+  border: 3px solid var(--color-teal-tint-1);
+}
+
+.stepper-circle-filled {
+  background-color: var(--color-teal-tint-1);
+}
+
+/* PrimeReact Component Overrides */
+.p-button,
+.p-inputtext,
+.p-dropdown,
+.p-multiselect,
+.p-calendar,
+.p-password,
+.p-inputnumber-input,
+.p-dialog,
+.p-card,
+.p-panel,
+.p-fieldset {
+  border-radius: 12px !important;
+}
+
+/* Ajuste específico para grupos de inputs (como password que tiene un div wrapper) */
+.p-password > input {
+  border-radius: 12px !important;
 }

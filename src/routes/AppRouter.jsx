@@ -13,8 +13,7 @@ import RecoverOTPForm from '../features/auth/views/RecoverOTPForm';
 import RecoverPasswordForm from '../features/auth/views/RecoverPasswordForm';
 
 import AppLayout from '../components/global/AppLayout';
-
-const HomePage = () => <h1>Home Page</h1>;
+import PassengerLandingPage from '../features/passenger/views/LandingPage';
 
 const AppRouter = () => {
   return (
@@ -27,10 +26,16 @@ const AppRouter = () => {
           <Route path="/recover-otp" element={<RecoverOTPForm />} />
           <Route path="/recover-password" element={<RecoverPasswordForm />} />
         </Route>
+
+        {/* Rutas públicas temporales, para desarrollo sin autenticación */}
+        <Route element={<AppLayout />}>
+          <Route path="/p/home" element={<PassengerLandingPage />} />
+        </Route>
       </Route>
+
       <Route element={<PrivateRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<PassengerLandingPage />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFound />} />
