@@ -1,0 +1,58 @@
+import React from 'react';
+import { Button } from 'primereact/button';
+import { Link } from 'react-router-dom';
+
+export default function RecoverEmailForm() {
+  return (
+    <div className="row justify-content-center">
+      <div className="col-12 col-md-10 col-lg-7">
+        <div className="card border-0 shadow-lg">
+          <div className="card-body p-4 p-lg-5">
+            <h5 className="card-title fw-bold mb-4">Recupera tu cuenta</h5>
+
+            <div className="d-flex align-items-center justify-content-between mb-2 position-relative">
+              <div className="position-absolute w-100" style={{ height: '2px', backgroundColor: '#e9ecef', zIndex: 0 }}></div>
+
+              <div className="bg-white position-relative z-1 px-2">
+                <div className="rounded-circle d-flex align-items-center justify-content-center border border-3" style={{ width: '24px', height: '24px', borderColor: 'var(--color-teal-tint-1)' }}></div>
+              </div>
+
+              <div className="bg-white position-relative z-1 px-2">
+                <div className="rounded-circle bg-secondary bg-opacity-25" style={{ width: '24px', height: '24px' }}></div>
+              </div>
+
+              <div className="bg-white position-relative z-1 px-2">
+                <div className="rounded-circle bg-secondary bg-opacity-25" style={{ width: '24px', height: '24px' }}></div>
+              </div>
+            </div>
+
+            <div className="d-flex justify-content-between mb-5 small fw-bold">
+              <span style={{ color: '#000' }}>Correo electrónico</span>
+              <span className="text-muted">Código de seguridad</span>
+              <span className="text-muted">Nueva contraseña</span>
+            </div>
+
+            <form>
+              <div className="form-floating mb-4">
+                <input type="email" className="form-control" id="emailRecover" placeholder="Correo electrónico" />
+                <label htmlFor="emailRecover">
+                  <i className="bi bi-envelope me-2"></i>Correo electrónico
+                </label>
+              </div>
+
+              <div className="d-flex justify-content-end gap-3 mt-5">
+                <Link to="/login">
+                  <Button label="Volver" className="p-button-outlined fw-bold px-4" style={{ color: 'var(--color-teal-tint-1)', borderColor: 'var(--color-teal-tint-1)' }} />
+                </Link>
+                <Link to="/recover-otp">
+                  {' '}
+                  <Button label="Continuar" className="btn-lime px-4" />
+                </Link>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

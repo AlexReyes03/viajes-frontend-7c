@@ -21,7 +21,7 @@ PrimeReact.autoZIndex = true;
 PrimeReact.zIndex['overlay'] = 1200;
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>
 )

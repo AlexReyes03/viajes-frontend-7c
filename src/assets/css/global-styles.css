@@ -1,0 +1,170 @@
+:root {
+  /* Azules (Tintes) */
+  --color-blue-tint-1: #0084c4;
+  --color-blue-tint-2: #00a5f5;
+  --color-blue-tint-3: #29b9ff;
+  --color-blue-tint-4: #5ccaff;
+  --color-blue-tint-5: #8fdaff;
+  --color-blue-tint-6: #c2ebff;
+  --color-blue-tint-7: #f5fcff;
+
+  /* Cianes/Turquesas (Tintes) */
+  --color-cyan-tint-1: #0eafd8;
+  --color-cyan-tint-2: #27c8f1;
+  --color-cyan-tint-3: #57d4f4;
+  --color-cyan-tint-4: #87e1f7;
+  --color-cyan-tint-5: #b7edfa;
+  --color-cyan-tint-6: #e7f9fd;
+
+  /* Verdes Azulados/Turquesas Oscuros (Tintes) */
+  --color-teal-tint-1: #089b8f;
+  --color-teal-tint-2: #0bccbc;
+  --color-teal-tint-3: #16f3e1;
+  --color-teal-tint-4: #47f5e7;
+  --color-teal-tint-5: #77f8ed;
+  --color-teal-tint-6: #a8faf4;
+  --color-teal-tint-7: #d8fdfa;
+
+  /* Amarillos/Lima (Tintes) */
+  --color-lime-tint-1: #a8bf30;
+  --color-lime-tint-2: #bed350;
+  --color-lime-tint-3: #cddd79;
+  --color-lime-tint-4: #dce7a1;
+  --color-lime-tint-5: #ebf2ca;
+  --color-lime-tint-6: #fafcf3;
+
+  /* Morados/Lilas (Tintes) */
+  --color-purple-tint-1: #c25cff;
+  --color-purple-tint-2: #d58fff;
+  --color-purple-tint-3: #e8c2ff;
+  --color-purple-tint-4: #fcf7ff;
+
+  /* Rojos/Corales (Tintes) */
+  --color-red-tint-1: #bf3030;
+  --color-red-tint-2: #d35050;
+  --color-red-tint-3: #dd7979;
+  --color-red-tint-4: #e7a1a1;
+  --color-red-tint-5: #f2caca;
+  --color-red-tint-6: #fcf3f3;
+
+  /* Blanco */
+  --color-white: #ffffff;
+
+  /* --- SOMBRAS (SHADES) --- */
+  /* Azules (Sombras) */
+  --color-blue-shade-1: #0084c4;
+  --color-blue-shade-2: #00608f;
+  --color-blue-shade-3: #003e5c;
+  --color-blue-shade-4: #001b29;
+  --color-blue-shade-5: #000000;
+
+  /* Cianes/Turquesas (Sombras) */
+  --color-cyan-shade-1: #0eafd8;
+  --color-cyan-shade-2: #0b88a8;
+  --color-cyan-shade-3: #086178;
+  --color-cyan-shade-4: #053a48;
+  --color-cyan-shade-5: #021318;
+  --color-cyan-shade-6: #000000;
+
+  /* Verdes Azulados/Turquesas Oscuros (Sombras) */
+  --color-teal-shade-1: #089b8f;
+  --color-teal-shade-2: #066b62;
+  --color-teal-shade-3: #033a36;
+  --color-teal-shade-4: #010a09;
+  --color-teal-shade-5: #000000;
+
+  /* Amarillos/Lima (Sombras) */
+  --color-lime-shade-1: #a8bf30;
+  --color-lime-shade-2: #859726;
+  --color-lime-shade-3: #616e1c;
+  --color-lime-shade-4: #3d4511;
+  --color-lime-shade-5: #191d07;
+  --color-lime-shade-6: #000000;
+
+  /* Morados/Lilas (Sombras) */
+  --color-purple-shade-1: #c25cff;
+  --color-purple-shade-2: #af29ff;
+  --color-purple-shade-3: #9900f5;
+  --color-purple-shade-4: #7900c2;
+  --color-purple-shade-5: #59008f;
+  --color-purple-shade-6: #39005c;
+  --color-purple-shade-7: #190029;
+  --color-purple-shade-8: #000000;
+
+  /* Rojos/Corales (Sombras) */
+  --color-red-shade-1: #bf3030;
+  --color-red-shade-2: #972826;
+  --color-red-shade-3: #6e1c1c;
+  --color-red-shade-4: #451111;
+  --color-red-shade-5: #1d0707;
+  --color-red-shade-6: #000000;
+
+  /* Negro */
+  --color-black: #000000;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+.velocity-navbar {
+  background-color: var(--color-blue-tint-1, #0084c4);
+  min-height: 70px;
+}
+
+.velocity-navbar .nav-link {
+  position: relative;
+  font-size: 1.05rem;
+}
+
+.velocity-navbar .nav-link:hover,
+.velocity-navbar .nav-link.active-link {
+  font-weight: 700;
+}
+
+.velocity-navbar .nav-link.active-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0px;
+  height: 2px;
+  background-color: var(--color-white, #fff);
+}
+
+.app-main {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.form-floating > .form-control {
+  background-color: #e9ecef;
+  border: none;
+}
+
+.form-floating > .form-control:focus {
+  background-color: #f8f9fa;
+  box-shadow: none;
+  border: 1px solid var(--color-blue-tint-1);
+}
+
+.btn-lime {
+  background-color: var(--color-lime-tint-1) !important;
+  border: none !important;
+  font-weight: 600 !important;
+  padding-top: 0.8rem !important;
+  padding-bottom: 0.8rem !important;
+}
+
+.btn-lime:hover {
+  background-color: var(--color-lime-shade-2) !important;
+}
