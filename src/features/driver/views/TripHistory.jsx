@@ -7,7 +7,7 @@ import { Calendar } from 'primereact/calendar';
 import { Badge } from 'primereact/badge';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import MapThumbnail from '../components/MapThumbnail';
-import MapView from '../components/MapView';
+import MapView from '../../../components/global/MapView';
 
 /**
  * TripHistory - Driver Trip History View

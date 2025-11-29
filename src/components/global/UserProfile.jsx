@@ -105,27 +105,9 @@ export default function UserProfile() {
             </div>
             <div className="modal-body pt-4">
               <form className="d-flex flex-column gap-2">
-                <PasswordInput 
-                  id="currentPassword" 
-                  label="Contraseña actual" 
-                  placeholder="Contraseña actual" 
-                  value={currentPass}
-                  onChange={(e) => setCurrentPass(e.target.value)}
-                />
-                <PasswordInput 
-                  id="newPassword" 
-                  label="Nueva contraseña" 
-                  placeholder="Nueva contraseña" 
-                  value={newPass}
-                  onChange={(e) => setNewPass(e.target.value)}
-                />
-                <PasswordInput 
-                  id="confirmPassword" 
-                  label="Confirmar contraseña" 
-                  placeholder="Confirmar contraseña" 
-                  value={confirmPass}
-                  onChange={(e) => setConfirmPass(e.target.value)}
-                />
+                <PasswordInput id="currentPassword" label="Contraseña actual" placeholder="Contraseña actual" value={currentPass} onChange={(e) => setCurrentPass(e.target.value)} />
+                <PasswordInput id="newPassword" label="Nueva contraseña" placeholder="Nueva contraseña" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
+                <PasswordInput id="confirmPassword" label="Confirmar contraseña" placeholder="Confirmar contraseña" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} />
               </form>
             </div>
             <div className="modal-footer border-0 pt-2 pb-4">
@@ -236,14 +218,7 @@ export default function UserProfile() {
 
                 <Button label="Historial de Viajes" icon={<Icon path={mdiHistory} size={1} className="me-2" />} className="w-100 text-start p-3 bg-light hoverable border-0" text style={{ color: 'var(--color-cyan-tint-1)' }} onClick={() => navigate('/p/trips')} />
 
-                <Button
-                  label="Cerrar Sesión"
-                  icon={<Icon path={mdiLogout} size={1} className="me-2" />}
-                  className="w-100 text-start p-3 mt-2 bg-light hoverable border-0"
-                  text
-                  style={{ color: '#BF3030' }} // Color rojo solicitado
-                  onClick={() => navigate('/login')}
-                />
+                <Button label="Cerrar Sesión" icon={<Icon path={mdiLogout} size={1} className="me-2" />} className="w-100 text-start p-3 mt-2 bg-light hoverable border-0" text style={{ color: '#BF3030' }} onClick={() => navigate('/login')} />
               </div>
             </div>
           </div>

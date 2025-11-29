@@ -115,10 +115,31 @@ export default function TripStatusCard({ onHide, initialData }) {
 
       {/* Simulación de conductor encontrado */}
       <Button label="Cancelar solicitud" className="p-button-outlined p-button-secondary p-button-sm w-100 mb-2" onClick={() => setTripState('request')} />
-      <small className="text-muted cursor-pointer d-block mt-3" onClick={() => setTripState('ongoing')}>
+      <small className="text-muted cursor-pointer d-block mt-3" onClick={() => setTripState('pickup')}>
         (Simular conductor encontrado)
       </small>
     </div>
+  );
+
+  const PickupView = () => (
+    <>
+      <h5 className="fw-bold mb-3">¡Tu conductor ha llegado!</h5>
+      
+      <div className="alert alert-info border-0 d-flex align-items-center gap-2 mb-3">
+          <Icon path={mdiCrosshairsGps} size={1} />
+          <small className="fw-semibold">El conductor está esperando en el punto de recogida.</small>
+      </div>
+
+      <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
+      <DriverInfo />
+
+      <Button
+        label="Confirmar Inicio de Viaje"
+        className="w-100 btn-lime mt-3 py-2 fs-6 border-0"
+        icon="pi pi-check"
+        onClick={() => setTripState('ongoing')}
+      />
+    </>
   );
 
   const OngoingView = () => (
@@ -134,10 +155,35 @@ export default function TripStatusCard({ onHide, initialData }) {
       <PaymentDetails />
 
       <div className="mt-3 text-end">
-        <small className="text-muted cursor-pointer" onClick={() => setTripState('finished')}>
+        <small className="text-muted cursor-pointer" onClick={() => setTripState('dropoff')}>
           Simular llegada
         </small>
       </div>
+    </>
+  );
+
+  const DropoffView = () => (
+    <>
+      <h5 className="fw-bold mb-3">Llegada al Destino</h5>
+      
+      <div className="alert alert-success bg-opacity-10 border-0 d-flex align-items-center gap-2 mb-3">
+          <Icon path={mdiHome} size={1} className="text-success" />
+          <small className="fw-bold text-success">Has llegado a tu destino.</small>
+      </div>
+
+      <p className="small text-muted mb-2 fw-bold">Monto a pagar</p>
+      <PaymentDetails />
+
+      <p className="text-muted small mt-3 mb-4">
+         Por favor realiza el pago al conductor y confirma la finalización del servicio.
+      </p>
+
+      <Button
+        label="Confirmar Finalización"
+        className="w-100 btn-lime py-2 fs-6 border-0"
+        icon="pi pi-check-circle"
+        onClick={() => setTripState('finished')}
+      />
     </>
   );
 
@@ -166,7 +212,9 @@ export default function TripStatusCard({ onHide, initialData }) {
       <div className="card-body p-4">
         {tripState === 'request' && <RequestView />}
         {tripState === 'searching' && <SearchingView />}
+        {tripState === 'pickup' && <PickupView />}
         {tripState === 'ongoing' && <OngoingView />}
+        {tripState === 'dropoff' && <DropoffView />}
         {tripState === 'finished' && <FinishedView />}
       </div>
     </div>

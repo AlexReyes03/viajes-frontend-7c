@@ -1,151 +1,210 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import Icon from '@mdi/react';
-import { mdiClose, mdiMapMarker, mdiClockOutline, mdiCash, mdiAccount } from '@mdi/js';
 import { Button } from 'primereact/button';
+import { Avatar } from 'primereact/avatar';
+import Icon from '@mdi/react';
+import { mdiCrosshairsGps, mdiHome, mdiCash, mdiStar } from '@mdi/js';
 
-/**
- * TripStatusCard - Desktop version
- * Shows trip request details in a floating card on desktop view
- * 
- * Props:
- * - onHide: Function to hide the card
- * - initialData: Object with trip data from navigation state
- * 
- * Ready for backend integration:
- * - Replace mock data with API calls
- * - Add accept/reject trip handlers
- * - Implement real-time updates via WebSocket
- */
-const TripStatusCard = ({ onHide, initialData = null }) => {
-    // Mock data - Ready to replace with API data
+export default function TripStatusCard({ onHide, initialData }) {
+    const [tripState, setTripState] = useState('request');
+    
+    // Mock data based on initialData or defaults
     const tripData = initialData || {
-        passengerId: 'P12345',
         passengerName: 'Carlos Martínez',
         passengerRating: 4.8,
         pickupLocation: 'Universidad Tecnológica de Emiliano Zapata',
         dropoffLocation: 'Plaza Las Américas, Morelos',
-        estimatedDuration: '15 min',
-        estimatedDistance: '8.5 km',
-        estimatedFare: 85.00,
-        status: 'pending', // pending, accepted, in-progress, completed
+        fare: 85.00
     };
 
-    // Handler functions - 
-    const handleAcceptTrip = () => {
-        console.log('Trip accepted:', tripData);
-        // TODO: Call API to accept trip
-        // TODO: Update trip status
-        // TODO: Navigate to trip in progress view
-    };
+    // --- SUB-COMPONENTES ---
 
-    const handleRejectTrip = () => {
-        console.log('Trip rejected:', tripData);
-        // TODO: Call API to reject trip
-        onHide();
-    };
-
-    return (
-        <div className="card shadow-lg" style={{ width: '350px', maxWidth: '90vw' }}>
-            <div className="card-body p-3">
-                {/* Header */}
-                <div className="d-flex justify-content-between align-items-start mb-3">
-                    <h5 className="fw-bold mb-0">Nueva Solicitud de Viaje</h5>
-                    <button
-                        type="button"
-                        className="btn-close"
-                        aria-label="Close"
-                        onClick={onHide}
-                        style={{ padding: '0.25rem' }}
-                    />
-                </div>
-
-                {/* Passenger Info */}
-                <div className="d-flex align-items-center gap-2 mb-3 p-2 bg-light rounded">
-                    <div className="rounded-circle bg-white d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
-                        <Icon path={mdiAccount} size={1} style={{ color: 'var( --color-secondary)' }} />
-                    </div>
-                    <div className="flex-grow-1">
-                        <p className="mb-0 fw-semibold">{tripData.passengerName}</p>
-                        <div className="d-flex align-items-center gap-1">
-                            <span className="small text-warning">★</span>
-                            <span className="small text-muted">{tripData.passengerRating}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Trip Details */}
-                <div className="mb-3">
-                    {/* Pickup Location */}
-                    <div className="d-flex gap-2 mb-2">
-                        <Icon path={mdiMapMarker} size={0.8} style={{ color: 'var(--color-secondary)' }} />
-                        <div className="flex-grow-1">
-                            <p className="small text-muted mb-0">Origen</p>
-                            <p className="small fw-semibold mb-0">{tripData.pickupLocation}</p>
-                        </div>
-                    </div>
-
-                    <div className="border-start ms-2 ps-3" style={{ borderWidth: '2px', marginLeft: '0.4rem' }}>
-                        {/* Drop-off Location */}
-                        <div className="d-flex gap-2 mt-2">
-                            <Icon path={mdiMapMarker} size={0.8} style={{ color: 'var(--color-lime-tint-1)' }} />
-                            <div className="flex-grow-1">
-                                <p className="small text-muted mb-0">Destino</p>
-                                <p className="small fw-semibold mb-0">{tripData.dropoffLocation}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Trip Info*/}
-                <div className="row g-2 mb-3">
-                    <div className="col-6">
-                        <div className="p-2 bg-light rounded text-center">
-                            <Icon path={mdiClockOutline} size={0.7} className="text-muted mb-1" />
-                            <p className="small mb-0">{tripData.estimatedDuration}</p>
-                        </div>
-                    </div>
-                    <div className="col-6">
-                        <div className="p-2 bg-light rounded text-center">
-                            <Icon path={mdiCash} size={0.7} className="text-muted mb-1" />
-                            <p className="small mb-0 fw-bold">${tripData.estimatedFare.toFixed(2)}</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="d-flex gap-2">
-                    <Button
-                        label="Rechazar"
-                        outlined
-                        onClick={handleRejectTrip}
-                        className="flex-fill"
-                    />
-                    <Button
-                        label="Aceptar"
-                        onClick={handleAcceptTrip}
-                        className="flex-fill"
-                    />
+    const PassengerInfo = () => (
+        <div className="d-flex align-items-center gap-3 mb-3">
+            <Avatar icon="pi pi-user" size="large" shape="circle" className="bg-secondary text-white" />
+            <div>
+                <h6 className="fw-bold mb-0">{tripData.passengerName}</h6>
+                <div className="small text-muted d-flex align-items-center gap-1">
+                    <Icon path={mdiStar} size={0.7} className="text-dark" />
+                    <span className="fw-bold text-dark">{tripData.passengerRating}</span>
+                    <span>•</span>
+                    <span>Usuario frecuente</span>
                 </div>
             </div>
         </div>
     );
-};
+
+    const TripDetails = () => (
+        <>
+            <div className="card bg-light border-secondary border-opacity-25 mb-2">
+                <div className="card-body p-2 d-flex align-items-center gap-2">
+                    <Icon path={mdiCrosshairsGps} size={1} className="text-dark" />
+                    <div className="d-flex flex-column lh-1">
+                        <span className="small fw-bold">Origen</span>
+                        <span className="small text-muted text-truncate" style={{ maxWidth: '250px' }}>
+                            {tripData.pickupLocation}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div className="card bg-light border-secondary border-opacity-25 mb-3">
+                <div className="card-body p-2 d-flex align-items-center gap-2">
+                    <Icon path={mdiHome} size={1} className="text-dark" />
+                    <div className="d-flex flex-column lh-1">
+                        <span className="small fw-bold">Destino</span>
+                        <span className="small text-muted text-truncate" style={{ maxWidth: '250px' }}>
+                            {tripData.dropoffLocation}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+
+    const PaymentDetails = () => (
+        <div className="card bg-light border-secondary border-opacity-25">
+            <div className="card-body p-2 d-flex align-items-center gap-2">
+                <Icon path={mdiCash} size={1} className="text-dark" />
+                <div className="d-flex flex-column lh-1">
+                    <span className="small fw-bold">Efectivo</span>
+                    <span className="fs-5 fw-normal">${tripData.fare.toFixed(2)} MXN</span>
+                </div>
+            </div>
+        </div>
+    );
+
+    // --- VISTAS ---
+
+    const RequestView = () => (
+        <>
+            <h5 className="fw-bold mb-3">Solicitud de viaje</h5>
+            <p className="small text-muted mb-2 fw-bold">Pasajero</p>
+            <PassengerInfo />
+
+            <p className="small text-muted mb-2 fw-bold">Detalles del viaje</p>
+            <TripDetails />
+
+            <p className="small text-muted mb-2 fw-bold mt-2">Ganancia estimada</p>
+            <PaymentDetails />
+
+            <div className="d-flex gap-2 mt-4">
+                <Button
+                    label="Rechazar"
+                    className="p-button-outlined flex-fill border-0 bg-light text-danger fw-bold hoverable"
+                    onClick={onHide}
+                />
+                <Button
+                    label="Aceptar"
+                    className="flex-fill btn-lime border-0"
+                    onClick={() => setTripState('pickup')}
+                />
+            </div>
+        </>
+    );
+
+    const PickupView = () => (
+        <>
+            <h5 className="fw-bold mb-3">Iniciar Viaje</h5>
+            <div className="alert alert-info border-0 d-flex align-items-center gap-2 mb-3">
+                <Icon path={mdiCrosshairsGps} size={1} />
+                <small className="fw-semibold">Has llegado al punto de recogida.</small>
+            </div>
+            
+            <p className="small text-muted mb-2 fw-bold">Pasajero</p>
+            <PassengerInfo />
+
+            <p className="text-muted small mb-4">
+                Espera a que el pasajero confirme que ha abordado el vehículo para iniciar el viaje.
+            </p>
+
+            <Button
+                label="Confirmar Inicio de Viaje"
+                className="w-100 btn-lime py-2 fs-6 border-0"
+                icon="pi pi-check"
+                onClick={() => setTripState('ongoing')}
+            />
+        </>
+    );
+
+    const OngoingView = () => (
+        <>
+            <h5 className="fw-bold mb-3">Viaje en curso</h5>
+            <p className="small text-muted mb-2 fw-bold">Pasajero</p>
+            <PassengerInfo />
+
+            <p className="small text-muted mb-2 fw-bold">Detalles del viaje</p>
+            <TripDetails />
+
+            <div className="mt-4">
+                <Button
+                    label="Llegada al Destino"
+                    className="w-100 btn-lime py-2 fs-5 border-0"
+                    onClick={() => setTripState('dropoff')}
+                />
+            </div>
+        </>
+    );
+
+    const DropoffView = () => (
+        <>
+            <h5 className="fw-bold mb-3">Finalizar Viaje</h5>
+            <div className="alert alert-success bg-opacity-10 border-0 d-flex align-items-center gap-2 mb-3">
+                <Icon path={mdiHome} size={1} className="text-success" />
+                <small className="fw-bold text-success">Has llegado al destino.</small>
+            </div>
+
+            <p className="small text-muted mb-2 fw-bold">Cobro pendiente</p>
+            <PaymentDetails />
+
+            <p className="text-muted small mt-3 mb-4">
+                Confirma que has recibido el pago (si aplica) y que el pasajero ha descendido del vehículo de forma segura.
+            </p>
+
+            <Button
+                label="Confirmar Finalización"
+                className="w-100 btn-lime py-2 fs-6 border-0"
+                icon="pi pi-check-circle"
+                onClick={() => setTripState('finished')}
+            />
+        </>
+    );
+
+    const FinishedView = () => (
+        <>
+            <h5 className="fw-bold mb-3">Resumen del Viaje</h5>
+            <div className="text-center mb-4">
+                <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-3 mb-3">
+                    <Icon path={mdiCash} size={2} className="text-success" />
+                </div>
+                <h3 className="fw-bold text-success mb-0">${tripData.fare.toFixed(2)}</h3>
+                <p className="text-muted small">Viaje completado exitosamente</p>
+            </div>
+
+            <p className="small text-muted mb-2 fw-bold">Resumen</p>
+            <TripDetails />
+
+            <Button
+                label="Cerrar"
+                className="w-100 btn-lime mt-4 py-2 fs-5 border-0"
+                onClick={onHide}
+            />
+        </>
+    );
+
+    return (
+        <div className="card border-0 shadow-lg" style={{ width: '380px', borderRadius: '12px', cursor: 'default' }}>
+            <div className="card-body p-4">
+                {tripState === 'request' && <RequestView />}
+                {tripState === 'pickup' && <PickupView />}
+                {tripState === 'ongoing' && <OngoingView />}
+                {tripState === 'dropoff' && <DropoffView />}
+                {tripState === 'finished' && <FinishedView />}
+            </div>
+        </div>
+    );
+}
 
 TripStatusCard.propTypes = {
     onHide: PropTypes.func.isRequired,
-    initialData: PropTypes.shape({
-        passengerId: PropTypes.string,
-        passengerName: PropTypes.string,
-        passengerRating: PropTypes.number,
-        pickupLocation: PropTypes.string,
-        dropoffLocation: PropTypes.string,
-        estimatedDuration: PropTypes.string,
-        estimatedDistance: PropTypes.string,
-        estimatedFare: PropTypes.number,
-        status: PropTypes.string,
-    }),
+    initialData: PropTypes.object,
 };
-
-export default TripStatusCard;
-

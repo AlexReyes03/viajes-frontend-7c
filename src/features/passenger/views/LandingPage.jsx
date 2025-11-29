@@ -1,54 +1,60 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Icon from '@mdi/react';
-import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiHomeOutline, mdiStar, mdiMapMarker } from '@mdi/js';
+import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiHomeOutline, mdiStar } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
 
 import TripStatusCard from '../components/TripStatusCard';
 import TripStatusMobile from '../components/TripStatusMobile';
+import MapView from '../../../components/global/MapView';
+
+// --- Componentes Auxiliares (Optimizados fuera del render principal) ---
+
+const ToolButton = ({ icon, label }) => (
+  <div className="col-4 mb-2">
+    <button type="button" className="d-flex flex-column align-items-center justify-content-start p-0 border-0 shadow-none w-100 h-100 hoverable" style={{ background: 'transparent' }}>
+      <div
+        className="d-flex align-items-center justify-content-center mb-1"
+        style={{
+          backgroundColor: '#E7E0EB',
+          width: '50px',
+          height: '50px',
+          borderRadius: '12px',
+          color: '#000',
+        }}
+      >
+        <Icon path={icon} size={1} />
+      </div>
+      <span className="small fw-semibold text-dark text-center text-truncate w-100" style={{ textTransform: 'none' }}>
+        {label}
+      </span>
+    </button>
+  </div>
+);
+
+const ActivityItem = ({ icon, address, rating }) => (
+  <div className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2">
+    <div className="d-flex align-items-center gap-3 overflow-hidden">
+      <div className="rounded-circle border d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '35px', height: '35px' }}>
+        <Icon path={icon} size={0.8} className="text-dark" />
+      </div>
+      <div className="d-flex flex-column overflow-hidden">
+        <span className="fw-semibold small text-truncate w-100 d-block">{address}</span>
+      </div>
+    </div>
+    <div className="d-flex align-items-center gap-1 flex-shrink-0 ms-2">
+      <Icon path={mdiStar} size={0.6} className="text-dark" />
+      <span className="small fw-bold">{rating}</span>
+    </div>
+  </div>
+);
 
 export default function LandingPage() {
   const [showTripCard, setShowTripCard] = useState(true);
   const location = useLocation(); // Obtener estado de navegación
 
-  const ToolButton = ({ icon, label }) => (
-    <div className="col-4 mb-2">
-      <button type="button" className="d-flex flex-column align-items-center justify-content-start p-0 border-0 shadow-none w-100 h-100 hoverable" style={{ background: 'transparent' }}>
-        <div
-          className="d-flex align-items-center justify-content-center mb-1"
-          style={{
-            backgroundColor: '#E7E0EB',
-            width: '50px',
-            height: '50px',
-            borderRadius: '12px',
-            color: '#000',
-          }}
-        >
-          <Icon path={icon} size={1} />
-        </div>
-        <span className="small fw-semibold text-dark text-center text-truncate w-100" style={{ textTransform: 'none' }}>
-          {label}
-        </span>
-      </button>
-    </div>
-  );
-
-  const ActivityItem = ({ icon, address, rating }) => (
-    <div className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2">
-      <div className="d-flex align-items-center gap-3 overflow-hidden">
-        <div className="rounded-circle border d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '35px', height: '35px' }}>
-          <Icon path={icon} size={0.8} className="text-dark" />
-        </div>
-        <div className="d-flex flex-column overflow-hidden">
-          <span className="fw-semibold small text-truncate w-100 d-block">{address}</span>
-        </div>
-      </div>
-      <div className="d-flex align-items-center gap-1 flex-shrink-0 ms-2">
-        <Icon path={mdiStar} size={0.6} className="text-dark" />
-        <span className="small fw-bold">{rating}</span>
-      </div>
-    </div>
-  );
+  // Ubicación simulada del pasajero
+  const passengerLocation = [18.8568, -98.7993];
 
   return (
     <div className="w-100 container pb-3">
@@ -57,7 +63,7 @@ export default function LandingPage() {
         
         {/* VISTA MOBILE: Componente estático arriba del mapa */}
         <div className="col-12 d-lg-none">
-          <TripStatusMobile initialData={location.state} />
+          {showTripCard && <TripStatusMobile initialData={location.state} onHide={() => setShowTripCard(false)} />}
         </div>
 
         {/* VISTA DESKTOP: Componente flotante */}
@@ -74,17 +80,22 @@ export default function LandingPage() {
         <div className="col-12">
           <div className="card shadow-sm overflow-hidden">
             <div
-              className="map-container bg-light position-relative landing-map-height"
-              style={{ backgroundImage: 'url(https://mt1.google.com/vt/lyrs=m&x=662&y=1571&z=12)', backgroundSize: 'cover', minHeight: '500px', cursor: 'pointer' }}
+              className="map-container position-relative landing-map-height"
               onClick={() => setShowTripCard(true)}
+              style={{ cursor: 'pointer' }}
             >
-              <div className="position-absolute top-50 start-50 translate-middle">
-                <Icon path={mdiMapMarker} size={2} color="var(--color-lime-tint-1)" className="drop-shadow" />
-              </div>
-
-              <div className="position-absolute bottom-0 end-0 m-3 bg-white p-2 rounded shadow-sm">
-                <span className="small text-muted">© OpenStreetMap</span>
-              </div>
+              <MapView 
+                  center={passengerLocation}
+                  zoom={13}
+                  height="100%"
+                  markers={[
+                      {
+                          position: passengerLocation,
+                          popup: 'Tu ubicación actual',
+                          color: '#0084c4' // Azul para el pasajero
+                      }
+                  ]}
+              />
             </div>
           </div>
         </div>

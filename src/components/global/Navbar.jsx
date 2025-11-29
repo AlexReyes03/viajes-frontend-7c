@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar } from 'primereact/avatar';
 import { Menu } from 'primereact/menu';
 
@@ -8,6 +8,18 @@ import Logo from '../../assets/img/logo.png';
 export default function Navbar({ variant = 'login', user = {} }) {
   const menuRight = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Detectar el prefijo de la ruta actual (p: passenger, d: driver, a: admin)
+  // Por defecto usamos '/p' si no coincide con ninguno o estamos en raíz (aunque debería estar protegido)
+  const getCurrentRoot = () => {
+    const path = location.pathname;
+    if (path.startsWith('/d')) return '/d';
+    if (path.startsWith('/a')) return '/a';
+    return '/p';
+  };
+
+  const currentRoot = getCurrentRoot();
 
   const userMenuItems = [
     {
@@ -17,7 +29,7 @@ export default function Navbar({ variant = 'login', user = {} }) {
           label: 'Ir a perfil',
           icon: 'pi pi-user',
           command: () => {
-            navigate('/p/profile');
+            navigate(`${currentRoot}/profile`);
           },
         },
         {
@@ -33,29 +45,28 @@ export default function Navbar({ variant = 'login', user = {} }) {
 
   const renderCenterLinks = () => {
     if (variant === 'client') {
+      // Definimos los links base que comparten la mayoría de roles
+      // Si un rol tiene links muy distintos, se puede hacer un switch/case aquí
+      const links = [
+        { label: 'Inicio', to: `${currentRoot}/home` },
+        { label: 'Viajes', to: `${currentRoot}/trips` },
+        { label: 'Alertas', to: `${currentRoot}/alerts` },
+        { label: 'Perfil', to: `${currentRoot}/profile` },
+      ];
+
       return (
         <div className="collapse navbar-collapse justify-content-center order-3 order-lg-2" id="navbarContent">
           <ul className="navbar-nav mb-2 mb-lg-0 gap-3 fw-medium">
-            <li className="nav-item">
-              <NavLink to="/p/home" className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}>
-                Inicio
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink to="/p/trips" className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}>
-                Viajes
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink to="/p/alerts" className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}>
-                Alertas
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink to="/p/profile" className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}>
-                Perfil
-              </NavLink>
-            </li>
+            {links.map((link) => (
+              <li className="nav-item" key={link.to}>
+                <NavLink 
+                  to={link.to} 
+                  className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}
+                >
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
           </ul>
         </div>
       );
