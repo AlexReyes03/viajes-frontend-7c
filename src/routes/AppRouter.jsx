@@ -16,7 +16,9 @@ import RecoverPasswordForm from '../features/auth/views/RecoverPasswordForm';
 
 import AppLayout from '../components/global/AppLayout';
 import PassengerLandingPage from '../features/passenger/views/LandingPage';
-import TripHistory from '../features/passenger/views/TripHistory';
+import PassengerTripHistory from '../features/passenger/views/TripHistory';
+import DriverDashboard from '../features/driver/views/Dashboard';
+import DriverTripHistory from '../features/driver/views/TripHistory';
 
 const AppRouter = () => {
   return (
@@ -32,10 +34,17 @@ const AppRouter = () => {
 
         {/* Rutas públicas temporales, para desarrollo sin autenticación */}
         <Route element={<AppLayout />}>
+          {/* Passenger routes */}
           <Route path="/p/home" element={<PassengerLandingPage />} />
           <Route path="/p/profile" element={<UserProfile />} />
-          <Route path="/p/trips" element={<TripHistory />} />
+          <Route path="/p/trips" element={<PassengerTripHistory />} />
           <Route path="/p/alerts" element={<Notifications />} />
+
+          {/* Driver routes */}
+          <Route path="/d/home" element={<DriverDashboard />} />
+          <Route path="/d/trips" element={<DriverTripHistory />} />
+          <Route path="/d/profile" element={<UserProfile />} />
+          <Route path="/d/alerts" element={<Notifications />} />
         </Route>
       </Route>
 

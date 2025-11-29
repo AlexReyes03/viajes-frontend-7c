@@ -101,6 +101,7 @@
 
   /* Negro */
   --color-black: #000000;
+  --color-secondary: #6c757d;
 
   /* PrimeReact Overrides */
   --border-radius: 12px;
