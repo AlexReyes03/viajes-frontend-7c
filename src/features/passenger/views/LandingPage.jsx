@@ -1,53 +1,87 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Icon from '@mdi/react';
 import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiHomeOutline, mdiStar, mdiMapMarker } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
 
+import TripStatusCard from '../components/TripStatusCard';
+import TripStatusMobile from '../components/TripStatusMobile';
+
 export default function LandingPage() {
-  // Componente interno para los botones de Herramientas
+  const [showTripCard, setShowTripCard] = useState(true);
+  const location = useLocation(); // Obtener estado de navegación
+
   const ToolButton = ({ icon, label }) => (
-    <div className="col-4 mb-3">
-      <div className="d-flex flex-column align-items-center justify-content-center p-3 rounded-3 h-100 tool-btn">
-        <Icon path={icon} size={1.2} className="mb-2 text-dark" />
-        <span className="small fw-semibold text-dark">{label}</span>
-      </div>
+    <div className="col-4 mb-2">
+      <button type="button" className="d-flex flex-column align-items-center justify-content-start p-0 border-0 shadow-none w-100 h-100 hoverable" style={{ background: 'transparent' }}>
+        <div
+          className="d-flex align-items-center justify-content-center mb-1"
+          style={{
+            backgroundColor: '#E7E0EB',
+            width: '50px',
+            height: '50px',
+            borderRadius: '12px',
+            color: '#000',
+          }}
+        >
+          <Icon path={icon} size={1} />
+        </div>
+        <span className="small fw-semibold text-dark text-center text-truncate w-100" style={{ textTransform: 'none' }}>
+          {label}
+        </span>
+      </button>
     </div>
   );
 
-  // Componente interno para items de Actividad
   const ActivityItem = ({ icon, address, rating }) => (
-    <div className="d-flex align-items-center justify-content-between py-3 border-bottom">
-      <div className="d-flex align-items-center gap-3">
-        <div className="rounded-circle border d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
-          <Icon path={icon} size={0.9} className="text-dark" />
+    <div className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2">
+      <div className="d-flex align-items-center gap-3 overflow-hidden">
+        <div className="rounded-circle border d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '35px', height: '35px' }}>
+          <Icon path={icon} size={0.8} className="text-dark" />
         </div>
-        <div className="d-flex flex-column">
-          <span className="fw-semibold small text-truncate" style={{ maxWidth: '180px' }}>
-            {address}
-          </span>
+        <div className="d-flex flex-column overflow-hidden">
+          <span className="fw-semibold small text-truncate w-100 d-block">{address}</span>
         </div>
       </div>
-      <div className="d-flex align-items-center gap-1">
-        <Icon path={mdiStar} size={0.7} className="text-dark" />
+      <div className="d-flex align-items-center gap-1 flex-shrink-0 ms-2">
+        <Icon path={mdiStar} size={0.6} className="text-dark" />
         <span className="small fw-bold">{rating}</span>
       </div>
     </div>
   );
 
   return (
-    <div className="container-fluid p-4">
-      {/* --- SECCIÓN DEL MAPA --- */}
-      <div className="row mb-4">
+    <div className="w-100 container pb-3">
+      {/* --- SECCIÓN DEL MAPA Y SOLICITUD --- */}
+      <div className="row py-3 position-relative">
+        
+        {/* VISTA MOBILE: Componente estático arriba del mapa */}
+        <div className="col-12 d-lg-none">
+          <TripStatusMobile initialData={location.state} />
+        </div>
+
+        {/* VISTA DESKTOP: Componente flotante */}
+        {showTripCard && (
+          <div 
+            className="position-absolute end-0 top-0 pe-3 pt-4 d-none d-lg-block" 
+            style={{ zIndex: 1010, width: 'auto' }} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TripStatusCard onHide={() => setShowTripCard(false)} initialData={location.state} />
+          </div>
+        )}
+
         <div className="col-12">
-          <div className="card border-0 shadow-sm overflow-hidden" style={{ borderRadius: '12px' }}>
-            {/* Simulador de Mapa (Puedes reemplazar esto con Google Maps o Leaflet) */}
-            <div className="map-container bg-light position-relative" style={{ height: '400px', backgroundImage: 'url(https://mt1.google.com/vt/lyrs=m&x=1325&y=3143&z=13)', backgroundSize: 'cover' }}>
-              {/* Ejemplo de marcador en el mapa */}
+          <div className="card shadow-sm overflow-hidden">
+            <div
+              className="map-container bg-light position-relative landing-map-height"
+              style={{ backgroundImage: 'url(https://mt1.google.com/vt/lyrs=m&x=662&y=1571&z=12)', backgroundSize: 'cover', minHeight: '500px', cursor: 'pointer' }}
+              onClick={() => setShowTripCard(true)}
+            >
               <div className="position-absolute top-50 start-50 translate-middle">
                 <Icon path={mdiMapMarker} size={2} color="var(--color-lime-tint-1)" className="drop-shadow" />
               </div>
 
-              {/* Controles simulados del mapa */}
               <div className="position-absolute bottom-0 end-0 m-3 bg-white p-2 rounded shadow-sm">
                 <span className="small text-muted">© OpenStreetMap</span>
               </div>
@@ -57,16 +91,16 @@ export default function LandingPage() {
       </div>
 
       {/* --- SECCIÓN INFERIOR (3 COLUMNAS) --- */}
-      <div className="row g-4">
+      <div className="row g-3">
         {/* TARJETA 1: Herramientas */}
         <div className="col-12 col-lg-4">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
-            <div className="card-body p-4">
-              <h6 className="fw-bold mb-4">Herramientas</h6>
+          <div className="card shadow-sm h-100">
+            <div className="card-body p-3">
+              <h4 className="fw-bold mb-3">Herramientas</h4>
               <div className="row g-2">
                 <ToolButton icon={mdiAccountQuestion} label="Ayuda" />
                 <ToolButton icon={mdiWallet} label="Billetera" />
-                <ToolButton icon={mdiBell} label="Notifica..." />
+                <ToolButton icon={mdiBell} label="Notificaciones" />
                 <ToolButton icon={mdiFlash} label="App Plus" />
                 <ToolButton icon={mdiHistory} label="Mis viajes" />
                 <ToolButton icon={mdiMessageText} label="Mensajes" />
@@ -77,14 +111,14 @@ export default function LandingPage() {
 
         {/* TARJETA 2: Actividad Reciente */}
         <div className="col-12 col-lg-4">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
-            <div className="card-body p-4">
-              <h6 className="fw-bold mb-3">Actividad reciente</h6>
+          <div className="card shadow-sm h-100">
+            <div className="card-body p-3">
+              <h4 className="fw-bold mb-3">Actividad reciente</h4>
 
               <div className="d-flex flex-column">
                 <ActivityItem icon={mdiHomeOutline} address="Casa en Privada Valle de San..." rating="5.0" />
                 <ActivityItem icon={mdiHistory} address="Tractor Verde, 53, Colonia Azt..." rating="4.5" />
-                <ActivityItem icon={mdiHistory} address="Av. Universidad Tecnológica, ..." rating="4.5" />
+                <ActivityItem icon={mdiHistory} address="Av. Universidad Tecnológica, Emiliano Zapata" rating="4.5" />
               </div>
             </div>
           </div>
@@ -92,25 +126,22 @@ export default function LandingPage() {
 
         {/* TARJETA 3: Mi Calificación */}
         <div className="col-12 col-lg-4">
-          <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
-            <div className="card-body p-4 d-flex flex-column align-items-center justify-content-center text-center">
-              <h6 className="fw-bold w-100 text-start mb-4">Mi calificación</h6>
+          <div className="card shadow-sm h-100">
+            <div className="card-body p-3 d-flex flex-column align-items-center justify-content-center text-center">
+              <h4 className="fw-bold w-100 text-start mb-3">Mi calificación</h4>
 
-              {/* Usuario */}
-              <div className="d-flex align-items-center gap-3 mb-3">
-                <Avatar image="https://primefaces.org/cdn/primereact/images/avatar/amyelsner.png" size="large" shape="circle" className="p-overlay-badge" style={{ width: '60px', height: '60px' }} />
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <Avatar image="https://primefaces.org/cdn/primereact/images/avatar/xuxuefeng.png" size="large" shape="circle" className="p-overlay-badge" style={{ width: '50px', height: '50px' }} />
                 <span className="fs-4 fw-normal">Alejandro Reyes</span>
               </div>
 
-              {/* Estrellas */}
-              <div className="d-flex align-items-center gap-2 mb-4">
+              <div className="d-flex align-items-center gap-2 mb-2">
                 <Icon path={mdiStar} size={2.5} style={{ color: 'var(--color-teal-tint-1)' }} />
                 <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
                   4.5
                 </span>
               </div>
 
-              {/* Link inferior */}
               <a href="#" className="text-muted text-decoration-none small mt-auto">
                 Conoce el por qué de tu calificación
               </a>

@@ -120,6 +120,9 @@ code {
 .velocity-navbar {
   background-color: var(--color-blue-tint-1, #0084c4);
   min-height: 70px;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
 }
 
 .velocity-navbar .nav-link {
@@ -142,7 +145,7 @@ code {
   background-color: var(--color-white, #fff);
 }
 
-/* Layout para Autenticación (Login, Register, Recover) */
+/* Layout para Autenticación */
 .auth-main {
   min-height: calc(100vh - 70px);
   display: flex;
@@ -150,14 +153,13 @@ code {
   width: 100%;
 }
 
-/* Layout Principal de la App (Home, Dashboard, etc) */
+/* Layout Principal de la App */
 .app-main {
   min-height: calc(100vh - 70px);
   width: 100%;
-  background-color: #EDEDED;
+  background-color: #ededed;
 }
 
-/* Reglas generales de espaciado responsivo para ambos layouts */
 .auth-main,
 .app-main {
   padding-left: 160px;
@@ -173,7 +175,7 @@ code {
 }
 
 .app-main .card {
-  background-color: #FCF7FF !important;
+  background-color: #fcf7ff !important;
   border: none;
 }
 
@@ -240,6 +242,32 @@ code {
   background-color: var(--color-teal-tint-1);
 }
 
+.p-password > input {
+  border-radius: 12px !important;
+}
+
+.hoverable {
+  cursor: pointer;
+  transition: filter 0.2s ease-in-out, background-color 0.2s ease-in-out !important;
+}
+
+.hoverable:hover {
+  filter: brightness(0.9);
+}
+
+/* Mapa Responsivo Landing Page */
+.landing-map-height {
+  height: 400px;
+}
+
+@media (min-width: 992px) {
+  .landing-map-height {
+    height: 45dvh;
+    min-height: 350px;
+    max-height: 500px;
+  }
+}
+
 /* PrimeReact Component Overrides */
 .p-button,
 .p-inputtext,
@@ -251,11 +279,123 @@ code {
 .p-dialog,
 .p-card,
 .p-panel,
-.p-fieldset {
+.p-fieldset,
+.p-menu {
   border-radius: 12px !important;
 }
 
-/* Ajuste específico para grupos de inputs (como password que tiene un div wrapper) */
-.p-password > input {
-  border-radius: 12px !important;
+/* Fix for PrimeReact Menu in Bootstrap environment */
+.p-menu {
+  background-color: var(--surface-card, #ffffff) !important;
+  border: 1px solid var(--surface-border, #dee2e6) !important;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1) !important;
+  padding: 0.25rem 0 !important;
+  min-width: 12.5rem;
+}
+
+.p-menu .p-menuitem-link {
+  text-decoration: none !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0.75rem 1.25rem !important;
+  color: var(--text-color, #495057) !important;
+  transition: background-color 0.2s !important;
+  border-radius: 0 !important;
+}
+
+.p-menu .p-menuitem-link:hover {
+  background-color: var(--surface-hover, #f8f9fa) !important;
+}
+
+.p-menu .p-menuitem-icon {
+  margin-right: 0.5rem !important;
+}
+
+.p-menu .p-submenu-header {
+  margin: 0 !important;
+  padding: 0.75rem 1.25rem !important;
+  color: var(--text-color-secondary, #6c757d) !important;
+  background: var(--surface-ground, #ffffff) !important;
+  font-weight: 700 !important;
+}
+
+.p-menu .p-menu-list {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+/* PrimeReact Button Severity Overrides */
+
+/* Primary (Default) */
+.p-button:not(.p-button-secondary):not(.p-button-success):not(.p-button-info):not(.p-button-warning):not(.p-button-help):not(.p-button-danger):not(.p-button-link):not(.p-button-outlined):not(.p-button-text) {
+  background-color: var(--color-lime-tint-1) !important;
+  border-color: var(--color-lime-tint-1) !important;
+  color: #ffffff !important;
+}
+
+.p-button:not(.p-button-secondary):not(.p-button-success):not(.p-button-info):not(.p-button-warning):not(.p-button-help):not(.p-button-danger):not(.p-button-link):not(.p-button-outlined):not(.p-button-text):hover {
+  background-color: var(--color-lime-shade-2) !important;
+  border-color: var(--color-lime-shade-2) !important;
+}
+
+/* Secondary */
+.p-button.p-button-secondary:not(.p-button-outlined):not(.p-button-text) {
+  background-color: var(--color-teal-tint-1) !important;
+  border-color: var(--color-teal-tint-1) !important;
+  color: #ffffff !important;
+}
+
+.p-button.p-button-secondary:not(.p-button-outlined):not(.p-button-text):hover {
+  background-color: var(--color-teal-shade-2) !important;
+  border-color: var(--color-teal-shade-2) !important;
+}
+
+/* Tertiary (mapped to Info) */
+.p-button.p-button-info:not(.p-button-outlined):not(.p-button-text) {
+  background-color: var(--color-cyan-tint-1) !important;
+  border-color: var(--color-cyan-tint-1) !important;
+  color: #ffffff !important;
+}
+
+.p-button.p-button-info:not(.p-button-outlined):not(.p-button-text):hover {
+  background-color: var(--color-cyan-shade-2) !important;
+  border-color: var(--color-cyan-shade-2) !important;
+}
+
+/* Danger */
+.p-button.p-button-danger:not(.p-button-outlined):not(.p-button-text) {
+  background-color: var(--color-red-tint-1) !important;
+  border-color: var(--color-red-tint-1) !important;
+  color: #ffffff !important;
+}
+
+.p-button.p-button-danger:not(.p-button-outlined):not(.p-button-text):hover {
+  background-color: var(--color-red-shade-2) !important;
+  border-color: var(--color-red-shade-2) !important;
+}
+
+/* Outlined & Text Button Colors */
+.p-button.p-button-outlined:not(.p-button-secondary):not(.p-button-success):not(.p-button-info):not(.p-button-warning):not(.p-button-help):not(.p-button-danger),
+.p-button.p-button-text:not(.p-button-secondary):not(.p-button-success):not(.p-button-info):not(.p-button-warning):not(.p-button-help):not(.p-button-danger) {
+  color: var(--color-lime-tint-1) !important;
+  border-color: var(--color-lime-tint-1) !important;
+}
+
+.p-button.p-button-outlined.p-button-secondary,
+.p-button.p-button-text.p-button-secondary {
+  color: var(--color-teal-tint-1) !important;
+  border-color: var(--color-teal-tint-1) !important;
+}
+
+.p-button.p-button-outlined.p-button-info,
+.p-button.p-button-text.p-button-info {
+  color: var(--color-cyan-tint-1) !important;
+  border-color: var(--color-cyan-tint-1) !important;
+}
+
+.p-button.p-button-outlined.p-button-danger,
+.p-button.p-button-text.p-button-danger {
+  color: var(--color-red-tint-1) !important;
+  border-color: var(--color-red-tint-1) !important;
 }

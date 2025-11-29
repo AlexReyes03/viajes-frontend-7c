@@ -4,6 +4,8 @@ import PrivateRoute from './PrivateRouter';
 import PublicRoute from './PublicRouter';
 
 import NotFound from '../components/global/NotFound';
+import UserProfile from '../components/global/UserProfile';
+import Notifications from '../components/global/Notifications';
 
 import AuthLayout from '../components/global/AuthLayout';
 import LoginForm from '../features/auth/views/LoginForm';
@@ -14,6 +16,7 @@ import RecoverPasswordForm from '../features/auth/views/RecoverPasswordForm';
 
 import AppLayout from '../components/global/AppLayout';
 import PassengerLandingPage from '../features/passenger/views/LandingPage';
+import TripHistory from '../features/passenger/views/TripHistory';
 
 const AppRouter = () => {
   return (
@@ -30,6 +33,9 @@ const AppRouter = () => {
         {/* Rutas públicas temporales, para desarrollo sin autenticación */}
         <Route element={<AppLayout />}>
           <Route path="/p/home" element={<PassengerLandingPage />} />
+          <Route path="/p/profile" element={<UserProfile />} />
+          <Route path="/p/trips" element={<TripHistory />} />
+          <Route path="/p/alerts" element={<Notifications />} />
         </Route>
       </Route>
 

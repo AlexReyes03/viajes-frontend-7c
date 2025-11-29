@@ -1,8 +1,8 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client'
+import { createRoot } from 'react-dom/client';
 import PrimeReact from 'primereact/api';
 
-import App from './App.jsx'
+import App from './App.jsx';
 
 // Bootstrap
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -18,10 +18,16 @@ import './assets/css/global-styles.css';
 
 PrimeReact.ripple = true;
 PrimeReact.autoZIndex = true;
-PrimeReact.zIndex['overlay'] = 1200;
+PrimeReact.zIndex = {
+  modal: 1100,
+  overlay: 1200,
+  menu: 1200,
+  tooltip: 1100,
+  toast: 1200,
+};
 
 createRoot(document.getElementById('root')).render(
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>
-)
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

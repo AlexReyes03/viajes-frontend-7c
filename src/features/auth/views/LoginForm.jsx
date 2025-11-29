@@ -8,7 +8,7 @@ export default function LoginForm() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Estoy simulando un inicio de sesión exitoso, poner aquí la lógica de autenticación
+    // Simulación de inicio de sesión
     navigate('/p/home');
   };
 
