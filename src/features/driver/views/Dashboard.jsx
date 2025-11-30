@@ -100,6 +100,7 @@ export default function Dashboard() {
                     position: driverLocation,
                     popup: 'Tu ubicación actual',
                     color: '#a8bf30',
+                    type: 'circle'
                   },
                 ]}
               />

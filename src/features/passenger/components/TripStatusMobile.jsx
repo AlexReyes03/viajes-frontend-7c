@@ -6,12 +6,8 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import Icon from '@mdi/react';
 import { mdiCrosshairsGps, mdiArrowRight, mdiHome, mdiCash, mdiStar } from '@mdi/js';
 
-export default function TripStatusMobile({ initialData, onHide }) {
+export default function TripStatusMobile({ originValue = '', destinationValue = '', onSelectOriginLocation, onSelectDestinationLocation, selectionMode, onResetTrip, isFormValid }) {
   const [tripState, setTripState] = useState('request');
-  const [origin, setOrigin] = useState(initialData?.origin || '');
-  const [destination, setDestination] = useState(initialData?.destination || '');
-
-  // --- SUB-COMPONENTES ---
 
   const DriverInfo = () => (
     <div className="d-flex align-items-center gap-3 mb-3">
@@ -36,7 +32,7 @@ export default function TripStatusMobile({ initialData, onHide }) {
           <div className="d-flex flex-column lh-1">
             <span className="small fw-bold">Origen • 9:04 PM</span>
             <span className="small text-truncate" style={{ maxWidth: '250px' }}>
-              {origin || 'Ubicación actual'}
+              {originValue || 'Ubicación actual'}
             </span>
           </div>
         </div>
@@ -47,7 +43,7 @@ export default function TripStatusMobile({ initialData, onHide }) {
           <div className="d-flex flex-column lh-1">
             <span className="small fw-bold">Destino • 9:35 PM</span>
             <span className="small text-truncate" style={{ maxWidth: '250px' }}>
-              {destination || 'Destino seleccionado'}
+              {destinationValue || 'Destino seleccionado'}
             </span>
           </div>
         </div>
@@ -73,19 +69,29 @@ export default function TripStatusMobile({ initialData, onHide }) {
     <>
       <h5 className="fw-bold mb-3">Solicitar viaje</h5>
 
-      {/* Input Origen */}
-      <div className="d-flex align-items-center bg-secondary bg-opacity-10 rounded-3 p-2 mb-3 justify-content-between">
-        <InputText value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Ingrese punto de partida" className="bg-transparent border-0 text-dark small fw-semibold p-2 w-100 shadow-none focus:shadow-none" />
-        <div className="cursor-pointer p-2 hoverable" onClick={onHide}>
-          <Icon path={mdiCrosshairsGps} size={1} className="text-dark" />
+      {/* Input Destino */}
+      <div className={`d-flex align-items-center bg-secondary bg-opacity-10 rounded-3 p-2 mb-3 justify-content-between ${selectionMode === 'destination' ? 'border border-2 border-info' : ''}`}>
+        <InputText readOnly value={destinationValue} onClick={onSelectDestinationLocation} placeholder="¿A dónde vas?" className="bg-transparent border-0 text-dark small fw-semibold p-2 w-100 shadow-none focus:shadow-none" style={{ cursor: 'pointer' }} />
+        <div className="cursor-pointer p-2 hoverable" onClick={onSelectDestinationLocation}>
+          <Icon path={mdiArrowRight} size={1} className={selectionMode === 'destination' ? 'text-info' : 'text-dark'} />
         </div>
       </div>
 
-      {/* Input Destino */}
-      <div className="d-flex align-items-center bg-secondary bg-opacity-10 rounded-3 p-0 mb-3 overflow-hidden">
-        <InputText value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Ingrese destino" className="bg-transparent border-0 text-dark small fw-semibold p-3 w-100 shadow-none focus:shadow-none" />
-        <div className="d-flex align-items-center justify-content-center h-100 px-3 cursor-pointer btn-lime" style={{ width: '60px', minHeight: '54px' }} onClick={() => setTripState('searching')}>
-          <Icon path={mdiArrowRight} size={1.2} color="#fff" />
+      {/* Input Origen */}
+      <div
+        className={`d-flex align-items-center bg-secondary bg-opacity-10 rounded-3 p-2 mb-3 justify-content-between ${selectionMode === 'origin' ? 'border border-2 border-info' : ''}`}
+        style={{ opacity: destinationValue ? 1 : 0.5, pointerEvents: destinationValue ? 'auto' : 'none' }}
+      >
+        <InputText
+          readOnly
+          value={originValue}
+          onClick={onSelectOriginLocation}
+          placeholder="Punto de partida"
+          className="bg-transparent border-0 text-dark small fw-semibold p-2 w-100 shadow-none focus:shadow-none"
+          style={{ cursor: destinationValue ? 'pointer' : 'default' }}
+        />
+        <div className="cursor-pointer p-2 hoverable" onClick={onSelectOriginLocation}>
+          <Icon path={mdiCrosshairsGps} size={1} className={selectionMode === 'origin' ? 'text-info' : 'text-dark'} />
         </div>
       </div>
 
@@ -94,6 +100,8 @@ export default function TripStatusMobile({ initialData, onHide }) {
         <span className="small text-muted fw-bold">Tarifa del viaje (Fija):</span>
         <span className="fw-bold text-success">$50.00 MXN</span>
       </div>
+
+      <Button label="Solicitar Viaje" className="w-100 btn-lime mb-3 border-0" onClick={() => setTripState('searching')} disabled={!isFormValid} />
 
       <a href="#" className="small text-decoration-underline text-dark fw-semibold">
         Información sobre viajes
@@ -184,7 +192,14 @@ export default function TripStatusMobile({ initialData, onHide }) {
       <p className="small text-muted mb-2 fw-bold mt-2">Detalles del pago</p>
       <PaymentDetails />
 
-      <Button label="Finalizar Viaje" className="w-100 btn-lime mt-4 py-2 fs-5 border-0" onClick={() => setTripState('request')} />
+      <Button
+        label="Finalizar Viaje"
+        className="w-100 btn-lime mt-4 py-2 fs-5 border-0"
+        onClick={() => {
+          setTripState('request');
+          if (onResetTrip) onResetTrip();
+        }}
+      />
     </>
   );
 

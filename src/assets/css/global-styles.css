@@ -263,7 +263,7 @@ code {
 
 @media (min-width: 992px) {
   .landing-map-height {
-    height: 45dvh;
+    height: 65dvh;
     min-height: 350px;
     max-height: 500px;
   }
