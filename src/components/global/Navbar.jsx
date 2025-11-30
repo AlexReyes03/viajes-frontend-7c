@@ -10,8 +10,7 @@ export default function Navbar({ variant = 'login', user = {} }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Detectar el prefijo de la ruta actual (p: passenger, d: driver, a: admin)
-  // Por defecto usamos '/p' si no coincide con ninguno o estamos en raíz (aunque debería estar protegido)
+  // Detect current route prefix to determine user role context
   const getCurrentRoot = () => {
     const path = location.pathname;
     if (path.startsWith('/d')) return '/d';
@@ -20,39 +19,63 @@ export default function Navbar({ variant = 'login', user = {} }) {
   };
 
   const currentRoot = getCurrentRoot();
+  const isAdmin = currentRoot === '/a';
 
+  // Get navigation links based on current role context
+  const getNavigationLinks = () => {
+    if (isAdmin) {
+      return [
+        { label: 'Estadísticas', to: '/a/stats' },
+        { label: 'Usuarios', to: '/a/users' },
+        { label: 'Tarifas', to: '/a/tariffs' },
+      ];
+    }
+
+    // Default links for passenger and driver
+    return [
+      { label: 'Inicio', to: `${currentRoot}/home` },
+      { label: 'Viajes', to: `${currentRoot}/trips` },
+      { label: 'Alertas', to: `${currentRoot}/alerts` },
+      { label: 'Perfil', to: `${currentRoot}/profile` },
+    ];
+  };
+
+  // Menu items for admin exclude profile link
   const userMenuItems = [
     {
       label: 'Opciones',
-      items: [
-        {
-          label: 'Ir a perfil',
-          icon: 'pi pi-user',
-          command: () => {
-            navigate(`${currentRoot}/profile`);
-          },
-        },
-        {
-          label: 'Cerrar sesión',
-          icon: 'pi pi-power-off',
-          command: () => {
-            navigate('/login');
-          },
-        },
-      ],
+      items: isAdmin
+        ? [
+            {
+              label: 'Cerrar sesión',
+              icon: 'pi pi-power-off',
+              command: () => {
+                navigate('/login');
+              },
+            },
+          ]
+        : [
+            {
+              label: 'Ir a perfil',
+              icon: 'pi pi-user',
+              command: () => {
+                navigate(`${currentRoot}/profile`);
+              },
+            },
+            {
+              label: 'Cerrar sesión',
+              icon: 'pi pi-power-off',
+              command: () => {
+                navigate('/login');
+              },
+            },
+          ],
     },
   ];
 
   const renderCenterLinks = () => {
     if (variant === 'client') {
-      // Definimos los links base que comparten la mayoría de roles
-      // Si un rol tiene links muy distintos, se puede hacer un switch/case aquí
-      const links = [
-        { label: 'Inicio', to: `${currentRoot}/home` },
-        { label: 'Viajes', to: `${currentRoot}/trips` },
-        { label: 'Alertas', to: `${currentRoot}/alerts` },
-        { label: 'Perfil', to: `${currentRoot}/profile` },
-      ];
+      const links = getNavigationLinks();
 
       return (
         <div className="collapse navbar-collapse justify-content-center order-3 order-lg-2" id="navbarContent">
@@ -97,7 +120,7 @@ export default function Navbar({ variant = 'login', user = {} }) {
           <>
             <Menu model={userMenuItems} popup ref={menuRight} id="popup_menu_right" popupAlignment="right" />
             <div className="d-flex align-items-center gap-2 text-white hoverable p-1 rounded transition-all" onClick={(event) => menuRight.current.toggle(event)} aria-controls="popup_menu_right" aria-haspopup>
-              <span className="fw-semibold d-none d-md-block">{user.name || 'Usuario'}</span>
+              <span className="fw-semibold d-none d-md-block">{user.name || (isAdmin ? 'Administrador' : 'Usuario')}</span>
               <Avatar image={user.avatar} icon={!user.avatar ? 'pi pi-user' : null} shape="circle" className="bg-warning text-white" style={{ width: '40px', height: '40px' }} />
             </div>
           </>
@@ -116,7 +139,7 @@ export default function Navbar({ variant = 'login', user = {} }) {
           </button>
         )}
 
-        {/* Logo y Nombre de app */}
+        {/* Logo and app name */}
         <Link className="navbar-brand d-flex align-items-center gap-2 fw-bold text-white fs-4 me-auto me-lg-0" to="/">
           <img src={Logo} alt="VeloCity Logo" width="40" height="40" className="d-inline-block align-text-top" />
           VeloCity
