@@ -8,6 +8,14 @@ export const login = async (credentials) => {
   return payload;
 };
 
+export const register = async (data) => {
+  const payload = await request('/auth/register', {
+    method: 'POST',
+    body: data,
+  });
+  return payload;
+};
+
 export const logout = async () => {
   await request('/auth/logout', { method: 'POST' });
   localStorage.removeItem('token');

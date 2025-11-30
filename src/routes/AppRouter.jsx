@@ -1,7 +1,8 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import PrivateRoute from './PrivateRouter';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import PrivateRouter from './PrivateRouter';
 import PublicRoute from './PublicRouter';
+import { useAuth } from '../contexts/AuthContext';
 
 import NotFound from '../components/global/NotFound';
 import UserProfile from '../components/global/UserProfile';
@@ -25,6 +26,17 @@ import AdminStatistics from '../features/admin/views/Statistics';
 import AdminUsers from '../features/admin/views/Users';
 import AdminTariffs from '../features/admin/views/Tariffs';
 
+const RoleRedirect = () => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" />;
+  
+  const roles = user.roles ? user.roles.split(',') : [];
+  
+  if (roles.includes('ROLE_ADMIN')) return <Navigate to="/a/home" />;
+  if (roles.includes('ROLE_CONDUCTOR')) return <Navigate to="/d/home" />;
+  return <Navigate to="/p/home" />;
+};
+
 const AppRouter = () => {
   return (
     <Routes>
@@ -36,22 +48,35 @@ const AppRouter = () => {
           <Route path="/recover-otp" element={<RecoverOTPForm />} />
           <Route path="/recover-password" element={<RecoverPasswordForm />} />
         </Route>
+      </Route>
 
-        {/* Public routes for development without authentication */}
+      <Route element={<PrivateRouter />}>
+        <Route path="/" element={<RoleRedirect />} />
+      </Route>
+
+      {/* Passenger Routes */}
+      <Route element={<PrivateRouter allowedRoles={['ROLE_CLIENTE']} />}>
         <Route element={<AppLayout />}>
-          {/* Passenger routes */}
           <Route path="/p/home" element={<PassengerLandingPage />} />
           <Route path="/p/profile" element={<UserProfile />} />
           <Route path="/p/trips" element={<PassengerTripHistory />} />
           <Route path="/p/alerts" element={<Notifications />} />
+        </Route>
+      </Route>
 
-          {/* Driver routes */}
+      {/* Driver Routes */}
+      <Route element={<PrivateRouter allowedRoles={['ROLE_CONDUCTOR']} />}>
+        <Route element={<AppLayout />}>
           <Route path="/d/home" element={<DriverDashboard />} />
           <Route path="/d/trips" element={<DriverTripHistory />} />
           <Route path="/d/profile" element={<UserProfile />} />
           <Route path="/d/alerts" element={<Notifications />} />
+        </Route>
+      </Route>
 
-          {/* Admin routes */}
+      {/* Admin Routes */}
+      <Route element={<PrivateRouter allowedRoles={['ROLE_ADMIN']} />}>
+        <Route element={<AppLayout />}>
           <Route path="/a/home" element={<AdminStatistics />} />
           <Route path="/a/users" element={<AdminUsers />} />
           <Route path="/a/tariffs" element={<AdminTariffs />} />
@@ -59,11 +84,6 @@ const AppRouter = () => {
         </Route>
       </Route>
 
-      <Route element={<PrivateRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<PassengerLandingPage />} />
-        </Route>
-      </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

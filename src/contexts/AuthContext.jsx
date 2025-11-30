@@ -20,8 +20,15 @@ export const AuthProvider = ({ children }) => {
         if (decodedToken.exp > currentTime) {
           setUser({
             id: decodedToken.id,
-            email: decodedToken.sub,
+            email: decodedToken.email, // Use the email claim
+            username: decodedToken.sub, // sub is the username
             roles: decodedToken.roles,
+            name: decodedToken.name,
+            paternalSurname: decodedToken.paternalSurname,
+            maternalSurname: decodedToken.maternalSurname,
+            phone: decodedToken.phone,
+            status: decodedToken.status,
+            createdAt: decodedToken.createdAt
           });
           setIsAuthenticated(true);
         } else {
@@ -60,22 +67,12 @@ export const AuthProvider = ({ children }) => {
       const { token: newToken } = response;
       localStorage.setItem('token', newToken);
       setToken(newToken);
-      const decodedToken = jwtDecode(newToken);
-      setUser({
-        id: decodedToken.id,
-        email: decodedToken.sub,
-        roles: decodedToken.roles,
-      });
-      setIsAuthenticated(true);
+      // The useEffect will handle decoding and setting user state
       return { success: true };
     }
-    // Si el login falla, el fetch-wrapper lanzará un error que puede ser atrapado en el componente del formulario.
-    // No es necesario devolver un { success: false } explícitamente a menos que el servicio no lance error.
   };
 
   const logout = () => {
-    // Aquí podrías llamar a un endpoint de logout en el backend si existiera
-    // authService.logout(); 
     handleLogout();
   };
 

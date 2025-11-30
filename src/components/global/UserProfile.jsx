@@ -5,10 +5,12 @@ import { Avatar } from 'primereact/avatar';
 import Icon from '@mdi/react';
 import { mdiAccountEdit, mdiLockReset, mdiCog, mdiHistory, mdiLogout, mdiCheckDecagram, mdiCash, mdiBellOutline, mdiShieldAccountOutline } from '@mdi/js';
 import PasswordInput from '../../features/auth/components/PasswordInput';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function UserProfile() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout, user } = useAuth();
 
   const currentRoot = location.pathname.startsWith('/d') ? '/d' : '/p';
 
@@ -37,19 +39,19 @@ export default function UserProfile() {
               <div className="row g-3 mb-4">
                 <div className="col-12 col-md-4">
                   <div className="form-floating">
-                    <input type="text" className="form-control" id="nombre" placeholder="Nombre" defaultValue="Isael Alejandro" />
+                    <input type="text" className="form-control" id="nombre" placeholder="Nombre" defaultValue={user?.name?.split(' ')[0] || ''} />
                     <label htmlFor="nombre">Nombre</label>
                   </div>
                 </div>
                 <div className="col-12 col-md-4">
                   <div className="form-floating">
-                    <input type="text" className="form-control" id="apPaterno" placeholder="Apellido paterno" defaultValue="Reyes" />
+                    <input type="text" className="form-control" id="apPaterno" placeholder="Apellido paterno" defaultValue={user?.paternalSurname || ''} />
                     <label htmlFor="apPaterno">Apellido paterno</label>
                   </div>
                 </div>
                 <div className="col-12 col-md-4">
                   <div className="form-floating">
-                    <input type="text" className="form-control" id="apMaterno" placeholder="Apellido materno" defaultValue="Vargas" />
+                    <input type="text" className="form-control" id="apMaterno" placeholder="Apellido materno" defaultValue={user?.maternalSurname || ''} />
                     <label htmlFor="apMaterno">Apellido materno</label>
                   </div>
                 </div>
@@ -59,13 +61,13 @@ export default function UserProfile() {
               <div className="row g-3 mb-4">
                 <div className="col-12 col-md-6">
                   <div className="form-floating">
-                    <input type="email" className="form-control" id="email" placeholder="Correo electrónico" defaultValue="20233tn160@utez.edu.mx" />
+                    <input type="email" className="form-control" id="email" placeholder="Correo electrónico" defaultValue={user?.email || ''} />
                     <label htmlFor="email">Correo electrónico</label>
                   </div>
                 </div>
                 <div className="col-12 col-md-6">
                   <div className="form-floating">
-                    <input type="tel" className="form-control" id="telefono" placeholder="Número telefónico" defaultValue="7772955794" />
+                    <input type="tel" className="form-control" id="telefono" placeholder="Número telefónico" defaultValue={user?.phone || ''} />
                     <label htmlFor="telefono">Número telefónico</label>
                   </div>
                 </div>
@@ -75,7 +77,7 @@ export default function UserProfile() {
               <div className="row g-3">
                 <div className="col-12">
                   <div className="form-floating">
-                    <input type="text" className="form-control" id="usuario" placeholder="Usuario" defaultValue="AlexReyes03" />
+                    <input type="text" className="form-control" id="usuario" placeholder="Usuario" defaultValue={user?.username || ''} />
                     <label htmlFor="usuario">Usuario</label>
                   </div>
                 </div>
@@ -179,6 +181,16 @@ export default function UserProfile() {
     </div>
   );
 
+  const formatCreatedAt = (dateString) => {
+    if (!dateString) return 'No disponible';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
+        return dateString;
+    }
+  };
+
   return (
     <div className="w-100 container pb-3">
       <EditProfileModal />
@@ -190,11 +202,11 @@ export default function UserProfile() {
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
             <div className="card-body p-3 d-flex flex-column align-items-center text-center">
               <div className="mb-3 position-relative">
-                <Avatar image="https://primefaces.org/cdn/primereact/images/avatar/stephenshaw.png" shape="circle" style={{ width: '150px', height: '150px', border: '4px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                <Avatar image={user?.avatar || "https://primefaces.org/cdn/primereact/images/avatar/stephenshaw.png"} shape="circle" style={{ width: '150px', height: '150px', border: '4px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
               </div>
 
-              <h5 className="fw-bold mb-1">Isael Alejandro Reyes Vargas</h5>
-              <span className="text-muted fs-5 mb-4">Usuario</span>
+              <h5 className="fw-bold mb-1">{user?.name} {user?.paternalSurname}</h5>
+              <span className="text-muted fs-5 mb-4">{user?.roles?.includes('ROLE_CONDUCTOR') ? 'Conductor' : 'Pasajero'}</span>
 
               <div className="w-100 d-flex flex-column gap-2">
                 <Button
@@ -228,7 +240,17 @@ export default function UserProfile() {
                   onClick={() => navigate(`${currentRoot}/trips`)}
                 />
 
-                <Button label="Cerrar Sesión" icon={<Icon path={mdiLogout} size={1} className="me-2" />} className="w-100 text-start p-3 mt-2 bg-light hoverable border-0" text style={{ color: '#BF3030' }} onClick={() => navigate('/login')} />
+                <Button 
+                  label="Cerrar Sesión" 
+                  icon={<Icon path={mdiLogout} size={1} className="me-2" />} 
+                  className="w-100 text-start p-3 mt-2 bg-light hoverable border-0" 
+                  text 
+                  style={{ color: '#BF3030' }} 
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }} 
+                />
               </div>
             </div>
           </div>
@@ -243,17 +265,17 @@ export default function UserProfile() {
               <div className="mb-3">
                 <h6 className="fw-bold mb-3">Información Básica</h6>
                 <div className="ps-2">
-                  <InfoRow label="Nombre completo" value="Isael Alejandro Reyes Vargas" />
+                  <InfoRow label="Nombre completo" value={`${user?.name || ''} ${user?.paternalSurname || ''} ${user?.maternalSurname || ''}`.trim() || 'No disponible'} />
                   <InfoRow
                     label="Email"
                     value={
                       <div className="d-flex align-items-center justify-content-md-end gap-2">
-                        <span>20233tn160@utez.edu.mx</span>
+                        <span>{user?.email || 'No disponible'}</span>
                         <Icon path={mdiCheckDecagram} size={0.8} color="var(--color-lime-shade-2)" title="Verificado" />
                       </div>
                     }
                   />
-                  <InfoRow label="Teléfono" value="777-222-1122" />
+                  <InfoRow label="Teléfono" value={user?.phone || 'No disponible'} />
                   <hr className="text-muted opacity-25 my-1" />
                 </div>
               </div>
@@ -261,7 +283,7 @@ export default function UserProfile() {
               <div className="mb-3">
                 <h6 className="fw-bold mb-3">Seguridad</h6>
                 <div className="ps-2">
-                  <InfoRow label="Usuario" value="AlexReyes03" />
+                  <InfoRow label="Usuario" value={user?.username || 'No disponible'} />
                   <InfoRow label="Contraseña" value="*************" />
                   <hr className="text-muted opacity-25 my-1" />
                 </div>
@@ -270,12 +292,13 @@ export default function UserProfile() {
               <div className="mb-3">
                 <h6 className="fw-bold mb-3">Otros</h6>
                 <div className="ps-2">
-                  <InfoRow label="Fecha de alta" value="12/10/2025" />
-                  <InfoRow label="Estado" value="Activo" />
+                  <InfoRow label="Fecha de alta" value={formatCreatedAt(user?.createdAt)} />
+                  <InfoRow label="Estado" value={user?.status === true || user?.status === 'true' ? 'Activo' : 'Inactivo'} />
                   <hr className="text-muted opacity-25 my-1" />
                 </div>
               </div>
 
+              {/* ... Métodos de Pago section ... */}
               <div className="mb-0">
                 <h6 className="fw-bold mb-3">Métodos de Pago</h6>
                 <div className="ps-2">

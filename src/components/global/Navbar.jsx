@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar } from 'primereact/avatar';
 import { Menu } from 'primereact/menu';
+import { useAuth } from '../../contexts/AuthContext';
 
 import Logo from '../../assets/img/logo.png';
 
@@ -9,6 +10,7 @@ export default function Navbar({ variant = 'login', user = {} }) {
   const menuRight = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const getCurrentRoot = () => {
     const path = location.pathname;
@@ -54,6 +56,7 @@ export default function Navbar({ variant = 'login', user = {} }) {
           label: 'Cerrar sesión',
           icon: 'pi pi-power-off',
           command: () => {
+            logout();
             navigate('/login');
           },
         },
