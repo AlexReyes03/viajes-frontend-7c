@@ -20,6 +20,11 @@ import PassengerTripHistory from '../features/passenger/views/TripHistory';
 import DriverDashboard from '../features/driver/views/Dashboard';
 import DriverTripHistory from '../features/driver/views/TripHistory';
 
+// Admin views
+import AdminStatistics from '../features/admin/views/Statistics';
+import AdminUsers from '../features/admin/views/Users';
+import AdminTariffs from '../features/admin/views/Tariffs';
+
 const AppRouter = () => {
   return (
     <Routes>
@@ -32,7 +37,7 @@ const AppRouter = () => {
           <Route path="/recover-password" element={<RecoverPasswordForm />} />
         </Route>
 
-        {/* Rutas públicas temporales, para desarrollo sin autenticación */}
+        {/* Public routes for development without authentication */}
         <Route element={<AppLayout />}>
           {/* Passenger routes */}
           <Route path="/p/home" element={<PassengerLandingPage />} />
@@ -45,6 +50,11 @@ const AppRouter = () => {
           <Route path="/d/trips" element={<DriverTripHistory />} />
           <Route path="/d/profile" element={<UserProfile />} />
           <Route path="/d/alerts" element={<Notifications />} />
+
+          {/* Admin routes */}
+          <Route path="/a/stats" element={<AdminStatistics />} />
+          <Route path="/a/users" element={<AdminUsers />} />
+          <Route path="/a/tariffs" element={<AdminTariffs />} />
         </Route>
       </Route>
 
