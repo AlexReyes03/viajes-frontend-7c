@@ -10,7 +10,6 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Determine current root path (default to /p if not found)
   const currentRoot = location.pathname.startsWith('/d') ? '/d' : '/p';
 
   const InfoRow = ({ label, value, isLast = false }) => (

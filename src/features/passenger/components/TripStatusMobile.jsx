@@ -28,10 +28,12 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
     <>
       <div className="card bg-light border-secondary border-opacity-25 mb-2">
         <div className="card-body p-2 d-flex align-items-center gap-2">
-          <Icon path={mdiCrosshairsGps} size={1} className="text-dark" />
-          <div className="d-flex flex-column lh-1">
+          <div className="flex-shrink-0">
+            <Icon path={mdiCrosshairsGps} size={1} className="text-dark" />
+          </div>
+          <div className="d-flex flex-column lh-1 overflow-hidden w-100">
             <span className="small fw-bold">Origen • 9:04 PM</span>
-            <span className="small text-truncate" style={{ maxWidth: '250px' }}>
+            <span className="small text-muted text-truncate d-block w-100">
               {originValue || 'Ubicación actual'}
             </span>
           </div>
@@ -39,10 +41,12 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
       </div>
       <div className="card bg-light border-secondary border-opacity-25 mb-3">
         <div className="card-body p-2 d-flex align-items-center gap-2">
-          <Icon path={mdiHome} size={1} className="text-dark" />
-          <div className="d-flex flex-column lh-1">
+          <div className="flex-shrink-0">
+            <Icon path={mdiHome} size={1} className="text-dark" />
+          </div>
+          <div className="d-flex flex-column lh-1 overflow-hidden w-100">
             <span className="small fw-bold">Destino • 9:35 PM</span>
-            <span className="small text-truncate" style={{ maxWidth: '250px' }}>
+            <span className="small text-muted text-truncate d-block w-100">
               {destinationValue || 'Destino seleccionado'}
             </span>
           </div>

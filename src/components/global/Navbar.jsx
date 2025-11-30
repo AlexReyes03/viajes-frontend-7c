@@ -10,7 +10,6 @@ export default function Navbar({ variant = 'login', user = {} }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Detect current route prefix to determine user role context
   const getCurrentRoot = () => {
     const path = location.pathname;
     if (path.startsWith('/d')) return '/d';
@@ -21,7 +20,6 @@ export default function Navbar({ variant = 'login', user = {} }) {
   const currentRoot = getCurrentRoot();
   const isAdmin = currentRoot === '/a';
 
-  // Get navigation links based on current role context
   const getNavigationLinks = () => {
     if (isAdmin) {
       return [
@@ -41,7 +39,6 @@ export default function Navbar({ variant = 'login', user = {} }) {
     ];
   };
 
-  // Menu items for user dropdown
   const userMenuItems = [
     {
       label: 'Opciones',

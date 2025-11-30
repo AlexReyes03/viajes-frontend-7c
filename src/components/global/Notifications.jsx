@@ -202,7 +202,6 @@ export default function Notifications() {
         <div className="col-12">
           <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', minHeight: '40vh' }}>
             <div className="card-body p-0">
-              {/* Tabs con ancho completo y distribuido */}
               <div className="d-flex align-items-center border-bottom mb-4 w-100">
                 <TabButton id="todos" label="Todos" icon={mdiInboxFullOutline} />
                 <TabButton id="no-leidos" label="No leídos" icon={mdiBellRingOutline} />

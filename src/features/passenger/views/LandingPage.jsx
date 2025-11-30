@@ -276,9 +276,15 @@ export default function LandingPage() {
               >
                 <MapView ref={mapRef} center={userLocation || DEFAULT_CENTER} zoom={15} height="100%" markers={mapMarkers} onClick={handleMapClick} tempMarker={tempMarker} onConfirmSelection={handleConfirmSelection} onCancelSelection={handleCancelSelection} />
 
+                {/* Mensaje de ayuda flotante durante la selección */}
                 {selectionMode !== 'none' && !tempMarker && (
-                  <div className="position-absolute top-0 start-50 translate-middle-x mt-3 bg-dark text-white px-3 py-2 rounded-pill shadow-sm" style={{ zIndex: 1000, opacity: 0.9 }}>
-                    <small className="fw-bold">{selectionMode === 'origin' ? 'Toca en el mapa para definir el Origen' : 'Toca en el mapa para definir el Destino'}</small>
+                  <div 
+                    className="position-absolute top-0 start-50 translate-middle-x mt-3 bg-dark text-white px-3 py-2 rounded-pill shadow-sm text-center" 
+                    style={{ zIndex: 1000, opacity: 0.9, maxWidth: '90%', width: 'max-content' }}
+                  >
+                    <small className="fw-bold d-block text-truncate" style={{ whiteSpace: 'normal' }}>
+                      {selectionMode === 'origin' ? 'Toca en el mapa para definir el Origen' : 'Toca en el mapa para definir el Destino'}
+                    </small>
                   </div>
                 )}
               </div>
