@@ -40,10 +40,7 @@ export default function Users() {
     return MOCK_USERS.filter((user) => {
       const matchesType = !filters.userType || user.type === filters.userType;
       const matchesStatus = !filters.status || user.status === filters.status;
-      const matchesSearch =
-        !filters.search ||
-        user.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        user.email.toLowerCase().includes(filters.search.toLowerCase());
+      const matchesSearch = !filters.search || user.name.toLowerCase().includes(filters.search.toLowerCase()) || user.email.toLowerCase().includes(filters.search.toLowerCase());
 
       return matchesType && matchesStatus && matchesSearch;
     });
@@ -95,29 +92,19 @@ export default function Users() {
   };
 
   return (
-    <div className="container py-4">
+    <div className="container py-3">
       {/* Filters Section */}
       <FilterBar filters={filters} onFilterChange={handleFilterChange} />
 
       {/* Users List Section */}
       <div className="mb-3">
         <h5 className="fw-bold mb-3">Lista de Usuarios</h5>
-        <DataTable
-          data={paginatedUsers}
-          onEdit={handleEdit}
-          onToggleStatus={handleToggleStatus}
-        />
+        <DataTable data={paginatedUsers} onEdit={handleEdit} onToggleStatus={handleToggleStatus} />
       </div>
 
       {/* Pagination Section */}
       <div className="mt-4">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-        />
+        <Pagination currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
       </div>
 
       {/* Edit User Dialog - Responsive without scrollbar */}
@@ -139,26 +126,12 @@ export default function Users() {
           <div className="d-flex flex-column gap-3">
             <div>
               <label className="form-label small fw-semibold text-secondary">Nombre</label>
-              <InputText
-                id="editName"
-                value={selectedUser.name}
-                onChange={(e) =>
-                  setSelectedUser((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="w-100"
-              />
+              <InputText id="editName" value={selectedUser.name} onChange={(e) => setSelectedUser((prev) => ({ ...prev, name: e.target.value }))} className="w-100" />
             </div>
 
             <div>
               <label className="form-label small fw-semibold text-secondary">Correo</label>
-              <InputText
-                id="editEmail"
-                value={selectedUser.email}
-                onChange={(e) =>
-                  setSelectedUser((prev) => ({ ...prev, email: e.target.value }))
-                }
-                className="w-100"
-              />
+              <InputText id="editEmail" value={selectedUser.email} onChange={(e) => setSelectedUser((prev) => ({ ...prev, email: e.target.value }))} className="w-100" />
             </div>
 
             <div>
@@ -169,9 +142,7 @@ export default function Users() {
                   { label: 'Cliente', value: 'Cliente' },
                   { label: 'Conductor', value: 'Conductor' },
                 ]}
-                onChange={(e) =>
-                  setSelectedUser((prev) => ({ ...prev, type: e.value }))
-                }
+                onChange={(e) => setSelectedUser((prev) => ({ ...prev, type: e.value }))}
                 className="w-100"
               />
             </div>
@@ -184,9 +155,7 @@ export default function Users() {
                   { label: 'Activo', value: 'Activo' },
                   { label: 'Inactivo', value: 'Inactivo' },
                 ]}
-                onChange={(e) =>
-                  setSelectedUser((prev) => ({ ...prev, status: e.value }))
-                }
+                onChange={(e) => setSelectedUser((prev) => ({ ...prev, status: e.value }))}
                 className="w-100"
               />
             </div>
@@ -202,11 +171,7 @@ export default function Users() {
                 }}
                 onClick={() => setShowEditDialog(false)}
               />
-              <Button
-                label="Guardar"
-                className="btn-lime w-100 w-sm-auto order-1 order-sm-2"
-                onClick={handleSaveUser}
-              />
+              <Button label="Guardar" className="btn-lime w-100 w-sm-auto order-1 order-sm-2" onClick={handleSaveUser} />
             </div>
           </div>
         )}
@@ -214,4 +179,3 @@ export default function Users() {
     </div>
   );
 }
-

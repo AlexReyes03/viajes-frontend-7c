@@ -25,9 +25,10 @@ export default function Navbar({ variant = 'login', user = {} }) {
   const getNavigationLinks = () => {
     if (isAdmin) {
       return [
-        { label: 'Estadísticas', to: '/a/stats' },
+        { label: 'Estadísticas', to: '/a/home' },
         { label: 'Usuarios', to: '/a/users' },
         { label: 'Tarifas', to: '/a/tariffs' },
+        { label: 'Perfil', to: '/a/profile' },
       ];
     }
 
@@ -40,36 +41,26 @@ export default function Navbar({ variant = 'login', user = {} }) {
     ];
   };
 
-  // Menu items for admin exclude profile link
+  // Menu items for user dropdown
   const userMenuItems = [
     {
       label: 'Opciones',
-      items: isAdmin
-        ? [
-            {
-              label: 'Cerrar sesión',
-              icon: 'pi pi-power-off',
-              command: () => {
-                navigate('/login');
-              },
-            },
-          ]
-        : [
-            {
-              label: 'Ir a perfil',
-              icon: 'pi pi-user',
-              command: () => {
-                navigate(`${currentRoot}/profile`);
-              },
-            },
-            {
-              label: 'Cerrar sesión',
-              icon: 'pi pi-power-off',
-              command: () => {
-                navigate('/login');
-              },
-            },
-          ],
+      items: [
+        {
+          label: 'Ir a perfil',
+          icon: 'pi pi-user',
+          command: () => {
+            navigate(`${currentRoot}/profile`);
+          },
+        },
+        {
+          label: 'Cerrar sesión',
+          icon: 'pi pi-power-off',
+          command: () => {
+            navigate('/login');
+          },
+        },
+      ],
     },
   ];
 
@@ -78,20 +69,78 @@ export default function Navbar({ variant = 'login', user = {} }) {
       const links = getNavigationLinks();
 
       return (
-        <div className="collapse navbar-collapse justify-content-center order-3 order-lg-2" id="navbarContent">
-          <ul className="navbar-nav mb-2 mb-lg-0 gap-3 fw-medium">
-            {links.map((link) => (
-              <li className="nav-item" key={link.to}>
-                <NavLink 
-                  to={link.to} 
-                  className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}
-                >
-                  {link.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <>
+          <style>{`
+            /* Estilos Base Mobile First */
+            .velocity-navbar .nav-link {
+              padding: 0.5rem 1rem !important;
+              transition: all 0.2s;
+              position: relative; /* Para el borde en desktop */
+            }
+
+            /* Mobile Only */
+            @media (max-width: 991.98px) {
+              #navbarContent .navbar-nav {
+                background-color: rgba(0, 0, 0, 0.1);
+                padding: 0.5rem;
+                border-radius: 12px;
+                margin-top: 0.5rem;
+              }
+              .velocity-navbar .nav-link:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+              }
+              .velocity-navbar .nav-link.active-link {
+                background-color: rgba(255, 255, 255, 0.2) !important;
+                border-radius: 8px;
+                font-weight: 700;
+              }
+              /* Sin borde en mobile */
+              .velocity-navbar .nav-link.active-link::after {
+                display: none;
+              }
+            }
+
+            /* Desktop Only */
+            @media (min-width: 992px) {
+              .velocity-navbar .nav-link.active-link {
+                font-weight: 700;
+                background-color: transparent !important; /* Sin fondo en desktop */
+              }
+              
+              /* Borde animado */
+              .velocity-navbar .nav-link::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 5px; /* Un poco arriba del borde real */
+                height: 3px;
+                background-color: #fff;
+                transform: scaleX(0); /* Empieza invisible */
+                transform-origin: left;
+              }
+
+              .velocity-navbar .nav-link.active-link::after {
+                transform: scaleX(1); /* Se expande completo */
+                transition: transform 0.3s ease-in; /* Solo anima al aparecer */
+                height: 3px !important; /* Mantiene grosor consistente overriding global */
+                bottom: 5px !important; /* Mantiene posición consistente overriding global */
+              }
+            }
+          `}</style>
+          <div className="collapse navbar-collapse justify-content-center order-3 order-lg-2" id="navbarContent">
+            <ul className="navbar-nav mb-2 mb-lg-0 gap-1 fw-medium">
+              {links.map((link) => (
+                <li className="nav-item" key={link.to}>
+                  <NavLink to={link.to} className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}>
+                    {link.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
       );
     }
     return <div className="flex-grow-1"></div>;

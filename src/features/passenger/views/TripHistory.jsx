@@ -239,7 +239,7 @@ export default function TripHistory() {
   );
 
   return (
-    <div className="w-100 container pb-3 py-4">
+    <div className="w-100 container pb-3 py-3">
       <TripDetailsModal />
 
       {/* Header y Buscador */}

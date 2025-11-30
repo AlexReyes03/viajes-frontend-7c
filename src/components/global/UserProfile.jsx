@@ -220,7 +220,14 @@ export default function UserProfile() {
 
                 <Button label="Configuración" icon={<Icon path={mdiCog} size={1} className="me-2" />} className="w-100 text-start p-3 bg-light hoverable border-0" text style={{ color: 'var(--color-cyan-tint-1)' }} data-bs-toggle="modal" data-bs-target="#configModal" />
 
-                <Button label="Historial de Viajes" icon={<Icon path={mdiHistory} size={1} className="me-2" />} className="w-100 text-start p-3 bg-light hoverable border-0" text style={{ color: 'var(--color-cyan-tint-1)' }} onClick={() => navigate(`${currentRoot}/trips`)} />
+                <Button
+                  label="Historial de Viajes"
+                  icon={<Icon path={mdiHistory} size={1} className="me-2" />}
+                  className="w-100 text-start p-3 bg-light hoverable border-0"
+                  text
+                  style={{ color: 'var(--color-cyan-tint-1)' }}
+                  onClick={() => navigate(`${currentRoot}/trips`)}
+                />
 
                 <Button label="Cerrar Sesión" icon={<Icon path={mdiLogout} size={1} className="me-2" />} className="w-100 text-start p-3 mt-2 bg-light hoverable border-0" text style={{ color: '#BF3030' }} onClick={() => navigate('/login')} />
               </div>

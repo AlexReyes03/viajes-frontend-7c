@@ -225,7 +225,7 @@ export default function TripHistory() {
   };
 
   return (
-    <div className="w-100 container py-4">
+    <div className="w-100 container py-3">
       {/* Page Title and Filters */}
       <div className="row mb-4">
         <div className="col-12">

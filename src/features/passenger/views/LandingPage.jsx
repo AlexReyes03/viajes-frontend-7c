@@ -60,41 +60,30 @@ export default function LandingPage() {
     <div className="w-100 container pb-3">
       {/* --- SECCIÓN DEL MAPA Y SOLICITUD --- */}
       <div className="row py-3 position-relative">
-        
         {/* VISTA MOBILE: Componente estático arriba del mapa */}
-        <div className="col-12 d-lg-none">
-          {showTripCard && <TripStatusMobile initialData={location.state} onHide={() => setShowTripCard(false)} />}
-        </div>
+        <div className="col-12 d-lg-none">{showTripCard && <TripStatusMobile initialData={location.state} onHide={() => setShowTripCard(false)} />}</div>
 
         {/* VISTA DESKTOP: Componente flotante */}
         {showTripCard && (
-          <div 
-            className="position-absolute end-0 top-0 pe-3 pt-4 d-none d-lg-block" 
-            style={{ zIndex: 1010, width: 'auto' }} 
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="position-absolute end-0 top-0 pe-3 pt-4 d-none d-lg-block" style={{ zIndex: 1010, width: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <TripStatusCard onHide={() => setShowTripCard(false)} initialData={location.state} />
           </div>
         )}
 
         <div className="col-12">
           <div className="card shadow-sm overflow-hidden">
-            <div
-              className="map-container position-relative landing-map-height"
-              onClick={() => setShowTripCard(true)}
-              style={{ cursor: 'pointer' }}
-            >
-              <MapView 
-                  center={passengerLocation}
-                  zoom={13}
-                  height="100%"
-                  markers={[
-                      {
-                          position: passengerLocation,
-                          popup: 'Tu ubicación actual',
-                          color: '#0084c4' // Azul para el pasajero
-                      }
-                  ]}
+            <div className="map-container position-relative landing-map-height" onClick={() => setShowTripCard(true)} style={{ cursor: 'pointer' }}>
+              <MapView
+                center={passengerLocation}
+                zoom={13}
+                height="100%"
+                markers={[
+                  {
+                    position: passengerLocation,
+                    popup: 'Tu ubicación actual',
+                    color: '#0084c4', // Azul para el pasajero
+                  },
+                ]}
               />
             </div>
           </div>

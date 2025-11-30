@@ -82,18 +82,13 @@ export default function Tariffs() {
   };
 
   return (
-    <div className="container py-4">
+    <div className="container py-3">
       {/* Header with title and create button */}
       <div className="card shadow-sm mb-4">
         <div className="card-body p-3">
           <div className="d-flex justify-content-between align-items-center">
             <h4 className="fw-bold mb-0">Tarifas por Ruta</h4>
-            <Button
-              label="Nueva Tarifa"
-              icon={<Icon path={mdiPlus} size={0.9} className="me-2" />}
-              className="btn-lime"
-              onClick={handleCreate}
-            />
+            <Button label="Nueva Tarifa" icon={<Icon path={mdiPlus} size={0.9} className="me-2" />} className="btn-lime" onClick={handleCreate} />
           </div>
         </div>
       </div>
@@ -101,12 +96,7 @@ export default function Tariffs() {
       {/* Tariffs List */}
       <div>
         {tarifas.map((tarifa) => (
-          <TarifaCard
-            key={tarifa.id}
-            tarifa={tarifa}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          <TarifaCard key={tarifa.id} tarifa={tarifa} onEdit={handleEdit} onDelete={handleDelete} />
         ))}
       </div>
 
@@ -124,41 +114,18 @@ export default function Tariffs() {
       >
         <div className="d-flex flex-column gap-3">
           <div>
-            <label className="form-label small fw-semibold text-secondary">
-              Nombre de la ruta
-            </label>
-            <InputText
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Ej: Ruta Centro"
-              className="w-100"
-            />
+            <label className="form-label small fw-semibold text-secondary">Nombre de la ruta</label>
+            <InputText value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} placeholder="Ej: Ruta Centro" className="w-100" />
           </div>
 
           <div>
-            <label className="form-label small fw-semibold text-secondary">
-              Descripción del recorrido
-            </label>
-            <InputText
-              value={formData.route}
-              onChange={(e) => handleInputChange('route', e.target.value)}
-              placeholder="Ej: Centro - Universidad"
-              className="w-100"
-            />
+            <label className="form-label small fw-semibold text-secondary">Descripción del recorrido</label>
+            <InputText value={formData.route} onChange={(e) => handleInputChange('route', e.target.value)} placeholder="Ej: Centro - Universidad" className="w-100" />
           </div>
 
           <div>
-            <label className="form-label small fw-semibold text-secondary">
-              Precio
-            </label>
-            <InputNumber
-              value={formData.price}
-              onValueChange={(e) => handleInputChange('price', e.value)}
-              mode="currency"
-              currency="MXN"
-              locale="es-MX"
-              className="w-100"
-            />
+            <label className="form-label small fw-semibold text-secondary">Precio</label>
+            <InputNumber value={formData.price} onValueChange={(e) => handleInputChange('price', e.value)} mode="currency" currency="MXN" locale="es-MX" className="w-100" />
           </div>
 
           <div className="d-flex justify-content-end gap-2 pt-3">
@@ -171,11 +138,7 @@ export default function Tariffs() {
               }}
               onClick={() => setShowDialog(false)}
             />
-            <Button
-              label={dialogMode === 'create' ? 'Crear' : 'Guardar'}
-              className="btn-lime"
-              onClick={handleSave}
-            />
+            <Button label={dialogMode === 'create' ? 'Crear' : 'Guardar'} className="btn-lime" onClick={handleSave} />
           </div>
         </div>
       </Dialog>
@@ -193,8 +156,7 @@ export default function Tariffs() {
         contentClassName="pt-4"
       >
         <p className="mb-4">
-          ¿Estás seguro de que deseas eliminar la tarifa{' '}
-          <strong>{tarifaToDelete?.name}</strong>?
+          ¿Estás seguro de que deseas eliminar la tarifa <strong>{tarifaToDelete?.name}</strong>?
         </p>
         <div className="d-flex justify-content-end gap-2">
           <Button
@@ -206,14 +168,9 @@ export default function Tariffs() {
             }}
             onClick={() => setShowDeleteDialog(false)}
           />
-          <Button
-            label="Eliminar"
-            className="p-button-danger"
-            onClick={handleConfirmDelete}
-          />
+          <Button label="Eliminar" className="p-button-danger" onClick={handleConfirmDelete} />
         </div>
       </Dialog>
     </div>
   );
 }
-

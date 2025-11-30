@@ -52,9 +52,10 @@ const AppRouter = () => {
           <Route path="/d/alerts" element={<Notifications />} />
 
           {/* Admin routes */}
-          <Route path="/a/stats" element={<AdminStatistics />} />
+          <Route path="/a/home" element={<AdminStatistics />} />
           <Route path="/a/users" element={<AdminUsers />} />
           <Route path="/a/tariffs" element={<AdminTariffs />} />
+          <Route path="/a/profile" element={<UserProfile />} />
         </Route>
       </Route>
 
