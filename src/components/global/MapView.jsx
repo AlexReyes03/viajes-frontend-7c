@@ -83,17 +83,8 @@ const MapView = ({
 }) => {
   return (
     <div className={`map-view-container ${className}`} style={{ height, width: '100%', position: 'relative' }}>
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        style={{ height: '100%', width: '100%', borderRadius: '12px' }}
-        scrollWheelZoom={false}
-        zoomControl={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%', borderRadius: '12px' }} scrollWheelZoom={false} zoomControl={true}>
+        <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         <MapUpdater center={center} zoom={zoom} />
 
@@ -110,14 +101,6 @@ const MapView = ({
           );
         })}
       </MapContainer>
-      
-      {/* Attribution overlay */}
-      <div 
-          className="position-absolute bottom-0 end-0 m-3 bg-white px-2 py-1 rounded shadow-sm"
-          style={{ zIndex: 1000, fontSize: '0.75rem' }}
-      >
-          <span className="text-muted">© OpenStreetMap</span>
-      </div>
     </div>
   );
 };

@@ -112,7 +112,7 @@ export default function Notifications() {
         onClick={() => setActiveTab(id)}
       >
         <Icon path={icon} size={1} className="flex-shrink-0" />
-        <span className="text-truncate">{label}</span>
+        <span className="text-truncate d-none d-md-block">{label}</span>
       </div>
     );
   };

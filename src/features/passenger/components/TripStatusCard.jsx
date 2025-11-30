@@ -61,7 +61,7 @@ export default function TripStatusCard({ onHide, initialData }) {
         <Icon path={mdiCash} size={1} className="text-dark" />
         <div className="d-flex flex-column lh-1">
           <span className="small fw-bold">Efectivo</span>
-          <span className="fs-5 fw-normal">$50.00 MXN</span>
+          <span className="fw-normal">$50.00 MXN</span>
         </div>
       </div>
     </div>
@@ -96,7 +96,7 @@ export default function TripStatusCard({ onHide, initialData }) {
       {/* Tarifa Fija Info */}
       <div className="d-flex align-items-center justify-content-between mb-3 px-1">
         <span className="small text-muted fw-bold">Tarifa del viaje (Fija):</span>
-        <span className="fs-5 fw-bold text-success">$50.00 MXN</span>
+        <span className="fw-bold text-success">$50.00 MXN</span>
       </div>
 
       <a href="#" className="small text-decoration-underline text-dark fw-semibold">
@@ -124,21 +124,16 @@ export default function TripStatusCard({ onHide, initialData }) {
   const PickupView = () => (
     <>
       <h5 className="fw-bold mb-3">¡Tu conductor ha llegado!</h5>
-      
+
       <div className="alert alert-info border-0 d-flex align-items-center gap-2 mb-3">
-          <Icon path={mdiCrosshairsGps} size={1} />
-          <small className="fw-semibold">El conductor está esperando en el punto de recogida.</small>
+        <Icon path={mdiCrosshairsGps} size={1} />
+        <small className="fw-semibold">El conductor está esperando en el punto de recogida.</small>
       </div>
 
       <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
       <DriverInfo />
 
-      <Button
-        label="Confirmar Inicio de Viaje"
-        className="w-100 btn-lime mt-3 py-2 fs-6 border-0"
-        icon="pi pi-check"
-        onClick={() => setTripState('ongoing')}
-      />
+      <Button label="Confirmar Inicio de Viaje" className="w-100 btn-lime mt-3 py-2 fs-6 border-0" icon="pi pi-check" onClick={() => setTripState('ongoing')} />
     </>
   );
 
@@ -165,25 +160,18 @@ export default function TripStatusCard({ onHide, initialData }) {
   const DropoffView = () => (
     <>
       <h5 className="fw-bold mb-3">Llegada al Destino</h5>
-      
+
       <div className="alert alert-success bg-opacity-10 border-0 d-flex align-items-center gap-2 mb-3">
-          <Icon path={mdiHome} size={1} className="text-success" />
-          <small className="fw-bold text-success">Has llegado a tu destino.</small>
+        <Icon path={mdiHome} size={1} className="text-success" />
+        <small className="fw-bold text-success">Has llegado a tu destino.</small>
       </div>
 
       <p className="small text-muted mb-2 fw-bold">Monto a pagar</p>
       <PaymentDetails />
 
-      <p className="text-muted small mt-3 mb-4">
-         Por favor realiza el pago al conductor y confirma la finalización del servicio.
-      </p>
+      <p className="text-muted small mt-3 mb-4">Por favor realiza el pago al conductor y confirma la finalización del servicio.</p>
 
-      <Button
-        label="Confirmar Finalización"
-        className="w-100 btn-lime py-2 fs-6 border-0"
-        icon="pi pi-check-circle"
-        onClick={() => setTripState('finished')}
-      />
+      <Button label="Confirmar Finalización" className="w-100 btn-lime py-2 fs-6 border-0" icon="pi pi-check-circle" onClick={() => setTripState('finished')} />
     </>
   );
 

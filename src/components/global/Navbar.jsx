@@ -25,19 +25,19 @@ export default function Navbar({ variant = 'login', user = {} }) {
   const getNavigationLinks = () => {
     if (isAdmin) {
       return [
-        { label: 'Estadísticas', to: '/a/home' },
-        { label: 'Usuarios', to: '/a/users' },
-        { label: 'Tarifas', to: '/a/tariffs' },
-        { label: 'Perfil', to: '/a/profile' },
+        { label: 'Estadísticas', to: '/a/home', icon: 'pi pi-chart-bar' },
+        { label: 'Usuarios', to: '/a/users', icon: 'pi pi-users' },
+        { label: 'Tarifas', to: '/a/tariffs', icon: 'pi pi-money-bill' },
+        { label: 'Perfil', to: '/a/profile', icon: 'pi pi-user' },
       ];
     }
 
     // Default links for passenger and driver
     return [
-      { label: 'Inicio', to: `${currentRoot}/home` },
-      { label: 'Viajes', to: `${currentRoot}/trips` },
-      { label: 'Alertas', to: `${currentRoot}/alerts` },
-      { label: 'Perfil', to: `${currentRoot}/profile` },
+      { label: 'Inicio', to: `${currentRoot}/home`, icon: 'pi pi-home' },
+      { label: 'Viajes', to: `${currentRoot}/trips`, icon: 'pi pi-car' },
+      { label: 'Alertas', to: `${currentRoot}/alerts`, icon: 'pi pi-bell' },
+      { label: 'Perfil', to: `${currentRoot}/profile`, icon: 'pi pi-user' },
     ];
   };
 
@@ -64,86 +64,90 @@ export default function Navbar({ variant = 'login', user = {} }) {
     },
   ];
 
-  const renderCenterLinks = () => {
-    if (variant === 'client') {
-      const links = getNavigationLinks();
+  const renderDesktopLinks = () => {
+    if (variant !== 'client') return <div className="flex-grow-1"></div>;
+    const links = getNavigationLinks();
 
-      return (
-        <>
-          <style>{`
-            /* Estilos Base Mobile First */
+    return (
+      <>
+        <style>{`
+          @media (min-width: 992px) {
             .velocity-navbar .nav-link {
               padding: 0.5rem 1rem !important;
               transition: all 0.2s;
-              position: relative; /* Para el borde en desktop */
+              position: relative;
             }
-
-            /* Mobile Only */
-            @media (max-width: 991.98px) {
-              #navbarContent .navbar-nav {
-                background-color: rgba(0, 0, 0, 0.1);
-                padding: 0.5rem;
-                border-radius: 12px;
-                margin-top: 0.5rem;
-              }
-              .velocity-navbar .nav-link:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-                border-radius: 8px;
-              }
-              .velocity-navbar .nav-link.active-link {
-                background-color: rgba(255, 255, 255, 0.2) !important;
-                border-radius: 8px;
-                font-weight: 700;
-              }
-              /* Sin borde en mobile */
-              .velocity-navbar .nav-link.active-link::after {
-                display: none;
-              }
+            .velocity-navbar .nav-link.active-link {
+              font-weight: 700;
+              background-color: transparent !important;
             }
-
-            /* Desktop Only */
-            @media (min-width: 992px) {
-              .velocity-navbar .nav-link.active-link {
-                font-weight: 700;
-                background-color: transparent !important; /* Sin fondo en desktop */
-              }
-              
-              /* Borde animado */
-              .velocity-navbar .nav-link::after {
-                content: '';
-                position: absolute;
-                left: 0;
-                right: 0;
-                bottom: 5px; /* Un poco arriba del borde real */
-                height: 3px;
-                background-color: #fff;
-                transform: scaleX(0); /* Empieza invisible */
-                transform-origin: left;
-              }
-
-              .velocity-navbar .nav-link.active-link::after {
-                transform: scaleX(1); /* Se expande completo */
-                transition: transform 0.3s ease-in; /* Solo anima al aparecer */
-                height: 3px !important; /* Mantiene grosor consistente overriding global */
-                bottom: 5px !important; /* Mantiene posición consistente overriding global */
-              }
+            .velocity-navbar .nav-link::after {
+              content: '';
+              position: absolute;
+              left: 0;
+              right: 0;
+              bottom: 5px;
+              height: 3px;
+              background-color: #fff;
+              transform: scaleX(0);
+              transition: transform 0.3s ease-in;
+              transform-origin: left;
             }
-          `}</style>
-          <div className="collapse navbar-collapse justify-content-center order-3 order-lg-2" id="navbarContent">
-            <ul className="navbar-nav mb-2 mb-lg-0 gap-1 fw-medium">
-              {links.map((link) => (
-                <li className="nav-item" key={link.to}>
-                  <NavLink to={link.to} className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}>
-                    {link.label}
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </>
-      );
-    }
-    return <div className="flex-grow-1"></div>;
+            .velocity-navbar .nav-link.active-link::after {
+              transform: scaleX(1);
+              transition: transform 0.3s ease-in;
+              height: 3px !important;
+              bottom: 5px !important;
+            }
+          }
+        `}</style>
+        <div className="collapse navbar-collapse justify-content-center order-2" id="navbarContent">
+          <ul className="navbar-nav mb-2 mb-lg-0 gap-1 fw-medium">
+            {links.map((link) => (
+              <li className="nav-item" key={link.to}>
+                <NavLink to={link.to} className={({ isActive }) => `nav-link text-white ${isActive ? 'active-link' : ''}`}>
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </>
+    );
+  };
+
+  const renderMobileTabs = () => {
+    if (variant !== 'client') return null;
+    const links = getNavigationLinks();
+
+    const mobileContainerStyle = {
+      marginLeft: '-1rem',
+      marginRight: '-1rem',
+      marginBottom: '-0.5rem',
+      width: 'calc(100% + 2rem)',
+    };
+
+    return (
+      <div className="d-flex d-lg-none mt-2" style={mobileContainerStyle}>
+        {links.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className="text-white d-flex align-items-center justify-content-center flex-grow-1"
+            style={({ isActive }) => ({
+              textDecoration: 'none',
+              padding: '0.8rem 0',
+              borderBottom: isActive ? '4px solid #ffffff' : '4px solid transparent',
+              transition: 'border-color 0.2s',
+              flexBasis: 0,
+              opacity: isActive ? 1 : 0.7,
+            })}
+          >
+            <i className={`${link.icon} fs-4`}></i>
+          </NavLink>
+        ))}
+      </div>
+    );
   };
 
   const renderRightContent = () => {
@@ -180,23 +184,20 @@ export default function Navbar({ variant = 'login', user = {} }) {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark velocity-navbar shadow-sm px-2">
-      <div className="container-fluid">
-        {variant === 'client' && (
-          <button className="navbar-toggler border-0 me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-            <span className="navbar-toggler-icon"></span>
-          </button>
-        )}
-
-        {/* Logo and app name */}
-        <Link className="navbar-brand d-flex align-items-center gap-2 fw-bold text-white fs-4 me-auto me-lg-0" to="/">
+    <nav className="navbar navbar-expand-lg navbar-dark velocity-navbar shadow-sm px-3 py-2">
+      <div className="container-fluid d-flex flex-wrap align-items-center justify-content-between px-0">
+        {/* Row 1: Logo & User (Mobile & Desktop) */}
+        <Link className="navbar-brand d-flex align-items-center gap-2 fw-bold text-white fs-4 me-0" to="/">
           <img src={Logo} alt="VeloCity Logo" width="40" height="40" className="d-inline-block align-text-top" />
           VeloCity
         </Link>
 
-        {renderCenterLinks()}
+        <div className="d-flex align-items-center order-lg-3">{renderRightContent()}</div>
 
-        <div className={`d-flex align-items-center order-2 order-lg-3 ${variant === 'client' ? 'ms-0 ms-lg-auto' : 'ms-auto'}`}>{renderRightContent()}</div>
+        {/* Row 2 (Mobile) / Center (Desktop): Navigation */}
+        <div className="w-100 d-lg-none order-3">{renderMobileTabs()}</div>
+
+        {renderDesktopLinks()}
       </div>
     </nav>
   );
