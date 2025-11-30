@@ -395,8 +395,16 @@ code {
   border-color: var(--color-cyan-tint-1) !important;
 }
 
-.p-button.p-button-outlined.p-button-danger,
-.p-button.p-button-text.p-button-danger {
-  color: var(--color-red-tint-1) !important;
-  border-color: var(--color-red-tint-1) !important;
+/* ... (existing content) ... */
+
+/* Trip Card Map Thumbnail Responsive Width */
+.trip-card-map-thumbnail {
+  width: 100% !important;
 }
+
+@media (min-width: 768px) {
+  .trip-card-map-thumbnail {
+    width: 100px !important;
+  }
+}
+

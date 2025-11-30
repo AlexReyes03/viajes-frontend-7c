@@ -141,7 +141,7 @@ export default function Notifications() {
       <Menu model={menuItems} popup ref={menuRef} id="notification_menu" popupAlignment="right" />
 
       <div className="row justify-content-center">
-        <div className="col-12 col-xl-10">
+        <div className="col-12">
           <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', minHeight: '80vh' }}>
             <div className="card-body p-0">
               <div className="d-flex justify-content-around align-items-center pt-4 border-bottom mb-4 px-3">

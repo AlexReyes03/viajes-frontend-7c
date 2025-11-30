@@ -80,7 +80,7 @@ const MapThumbnail = ({
             className={`map-thumbnail-container ${className}`} 
             style={{ 
                 height: `${size}px`, 
-                width: `${size}px`, 
+                width: '100%', // Responsive width
                 borderRadius: '8px',
                 overflow: 'hidden',
                 border: '2px solid #e9ecef'
