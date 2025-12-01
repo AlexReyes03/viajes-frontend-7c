@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -10,13 +10,95 @@ import { Avatar } from 'primereact/avatar';
 import MapView from '../../../components/global/MapView';
 import MapThumbnail from '../../../components/global/MapThumbnail';
 
+import { useAuth } from '../../../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
+import * as TripService from '../../../api/trip/trip.service';
+
 export default function TripHistory() {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const trips = [];
+  // Fetch trips
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const response = await TripService.getClientHistory(user.id);
+        console.log('API History Response:', response?.data); // DEBUG LOG
+
+        if (response && response.data) {
+            // Map API data to UI structure
+            const mappedTrips = response.data.map(t => {
+                // Validate coordinates, default to Zapata if invalid
+                const originLat = Number(t.originLatitude) || 18.8503;
+                const originLng = Number(t.originLongitude) || -99.2008;
+                const destLat = Number(t.destinationLatitude) || 18.8703;
+                const destLng = Number(t.destinationLongitude) || -99.2208;
+
+                return {
+                    id: t.id,
+                    address: t.destinationAddress || t.destination || 'Destino desconocido',
+                    date: new Date(t.status === 'COMPLETED' ? (t.updatedAt || Date.now()) : Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }),
+                    price: `$${(t.fare || 0).toFixed(2)} MXN`,
+                    origin: { 
+                        name: t.originAddress || t.origin || 'Origen desconocido', 
+                        lat: originLat, 
+                        lng: originLng 
+                    },
+                    destination: { 
+                        name: t.destinationAddress || t.destination || 'Destino desconocido', 
+                        lat: destLat, 
+                        lng: destLng
+                    },
+                    driver: {
+                        name: t.driverName || 'Conductor Asignado',
+                        rating: 4.9, // Mock rating if not available
+                        trips: 150 // Mock trips count
+                    },
+                    status: t.status,
+                    fullDate: t.updatedAt || new Date().toISOString(),
+                    isLatest: false
+                };
+            });
+            
+            // Sort by date desc
+            mappedTrips.sort((a, b) => new Date(b.fullDate) - new Date(a.fullDate));
+            
+            if (mappedTrips.length > 0) {
+                mappedTrips[0].isLatest = true;
+            }
+            
+            setTrips(mappedTrips);
+        }
+      } catch (error) {
+        console.error('Error fetching passenger history:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [user]);
+
+  // Handle auto-open from LandingPage
+  useEffect(() => {
+      if (trips.length > 0 && location.state?.openTripId) {
+          const tripToOpen = trips.find(t => t.id === location.state.openTripId);
+          if (tripToOpen) {
+              handleCardClick(tripToOpen);
+              // Clear state to prevent reopening on refresh (optional but good practice)
+              window.history.replaceState({}, document.title);
+          }
+      }
+  }, [trips, location.state]);
 
   const filteredTrips = useMemo(() => {
     if (!searchTerm) {
@@ -29,24 +111,8 @@ export default function TripHistory() {
     });
   }, [searchTerm, trips]);
 
-  const mockTripDetails = {
-    driver: {
-      name: 'Ignacio Sánchez Ramírez',
-      rating: 4.9,
-      trips: 512,
-    },
-    origin: {
-      name: 'Docencia 2 UTEZ Emiliano Zapata',
-      coords: [18.8503, -99.2008],
-    },
-    destination: {
-      name: 'Casa en Privada Valle de San Luis',
-      coords: [18.8703, -99.2208],
-    },
-  };
-
   const handleCardClick = (trip) => {
-    setSelectedTrip({ ...trip, ...mockTripDetails });
+    setSelectedTrip(trip);
     setShowModal(true);
   };
 
@@ -67,12 +133,19 @@ export default function TripHistory() {
           {/* Mapa */}
           <div style={{ height: '200px', borderRadius: '12px', overflow: 'hidden' }}>
             <MapView
-              center={selectedTrip.origin && selectedTrip.destination ? [(selectedTrip.origin.coords[0] + selectedTrip.destination.coords[0]) / 2, (selectedTrip.origin.coords[1] + selectedTrip.destination.coords[1]) / 2] : [18.8503, -99.2008]}
+              center={(() => {
+                  if (selectedTrip.origin && selectedTrip.destination) {
+                      const lat = (selectedTrip.origin.lat + selectedTrip.destination.lat) / 2;
+                      const lng = (selectedTrip.origin.lng + selectedTrip.destination.lng) / 2;
+                      if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
+                  }
+                  return [18.8503, -99.2008];
+              })()}
               zoom={13}
               height="100%"
               markers={[
-                { position: selectedTrip.origin.coords, popup: 'Origen', color: '#089b8f' },
-                { position: selectedTrip.destination.coords, popup: 'Destino', color: '#a8bf30' },
+                { position: [selectedTrip.origin.lat, selectedTrip.origin.lng], popup: 'Origen', color: '#089b8f' },
+                { position: [selectedTrip.destination.lat, selectedTrip.destination.lng], popup: 'Destino', color: '#a8bf30' },
               ]}
             />
           </div>

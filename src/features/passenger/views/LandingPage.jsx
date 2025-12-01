@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useWebSocket } from '../../../hooks/useWebSocket';
+import * as TripService from '../../../api/trip/trip.service';
 import Icon from '@mdi/react';
-import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiHomeOutline, mdiStar } from '@mdi/js';
+import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiStar } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
+import { Toast } from 'primereact/toast';
 
 import TripStatusCard from '../components/TripStatusCard';
 import TripStatusMobile from '../components/TripStatusMobile';
@@ -31,44 +34,74 @@ const ToolButton = ({ icon, label, onClick }) => (
   </div>
 );
 
-const ActivityItem = ({ icon, address, rating }) => (
-  <div className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2">
-    <div className="d-flex align-items-center gap-3 overflow-hidden">
-      <div className="rounded-circle border d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '35px', height: '35px' }}>
-        <Icon path={icon} size={0.8} className="text-dark" />
-      </div>
-      <div className="d-flex flex-column overflow-hidden">
-        <span className="fw-semibold small text-truncate w-100 d-block">{address}</span>
-      </div>
-    </div>
-    <div className="d-flex align-items-center gap-1 flex-shrink-0 ms-2">
-      <Icon path={mdiStar} size={0.6} className="text-dark" />
-      <span className="small fw-bold">{rating}</span>
-    </div>
-  </div>
-);
-
-const DEFAULT_CENTER = [18.8568, -98.7993];
+const DEFAULT_CENTER = [18.8568, -98.7993]; // Emiliano Zapata
 
 export default function LandingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [showTripCard, setShowTripCard] = useState(true);
   const location = useLocation();
+  const toast = useRef(null);
+  
+  // WebSocket hook
+  const { lastMessage } = useWebSocket();
 
+  // Estado del viaje y datos
+  const [tripState, setTripState] = useState('request'); // request, searching, pickup, ongoing, dropoff, finished
+  const [currentTrip, setCurrentTrip] = useState(null);
+  const [showTripCard, setShowTripCard] = useState(true);
+
+  // Estados de formulario
   const [originValue, setOriginValue] = useState('');
   const [destinationValue, setDestinationValue] = useState('');
   const [originCoords, setOriginCoords] = useState(null);
   const [destinationCoords, setDestinationCoords] = useState(null);
 
+  // Estados de mapa
   const [selectionMode, setSelectionMode] = useState('none');
   const [tempMarker, setTempMarker] = useState(null);
-
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(false);
   const [isLocating, setIsLocating] = useState(true);
-  const mapRef = React.useRef(null);
+  
+  // Historial reciente
+  const [lastCompletedTrip, setLastCompletedTrip] = useState(null);
+  
+  const mapRef = useRef(null);
 
+  // Refs para romper ciclos de dependencia
+  const tripStateRef = useRef(tripState);
+  const currentTripRef = useRef(currentTrip);
+
+  useEffect(() => {
+    tripStateRef.current = tripState;
+    currentTripRef.current = currentTrip;
+  }, [tripState, currentTrip]);
+
+  // Cargar última actividad (viaje completado)
+  useEffect(() => {
+      const fetchLastActivity = async () => {
+          if (!user) return;
+          try {
+              const response = await TripService.getClientHistory(user.id);
+              if (response && response.data && response.data.length > 0) {
+                  // Filter completed only and get latest
+                  const completed = response.data
+                    .filter(t => t.status === 'COMPLETED')
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                  
+                  if (completed.length > 0) {
+                      setLastCompletedTrip(completed[0]);
+                  }
+              }
+          } catch (error) {
+              console.error("Error fetching last activity", error);
+          }
+      };
+      
+      fetchLastActivity();
+  }, [user, tripState]); // Refresh when trip state changes (e.g. finishes)
+
+  // --- Lógica de Ubicación ---
   const getLocation = () => {
     setIsLocating(true);
     setLocationError(false);
@@ -80,12 +113,17 @@ export default function LandingPage() {
           setUserLocation(userPos);
           setLocationError(false);
           setIsLocating(false);
+          
+          // Si no hay origen seleccionado, establecer ubicación actual como origen por defecto (opcional)
+          // if (!originCoords) {
+          //   setOriginCoords(userPos);
+          //   setOriginValue('Ubicación actual');
+          // }
         },
         (error) => {
           console.warn('No se pudo obtener la ubicación.', error);
           setLocationError(true);
           setIsLocating(false);
-          // Mantener default center pero marcar error
           if (!userLocation) setUserLocation(DEFAULT_CENTER);
         },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -97,11 +135,179 @@ export default function LandingPage() {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     getLocation();
   }, []);
 
-  // Simulación de Geocoding Inverso (Coordenadas -> Dirección)
+  // --- Lógica WebSocket ---
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    if (lastMessage.type === 'TRIP_UPDATE') {
+      const tripUpdate = lastMessage.data;
+      console.log('Trip update received:', tripUpdate);
+      
+      const currentTripId = currentTripRef.current?.id;
+      // Solo procesar si es el viaje actual (o si no tenemos viaje y es una confirmación de nuevo viaje)
+      if (currentTripId && tripUpdate.tripId !== currentTripId) return;
+
+      // Handle Driver Arrival Notification
+      const isDriverArrivedMsg = lastMessage.message === 'DRIVER_ARRIVED' || tripUpdate.message === 'DRIVER_ARRIVED';
+      const isDropoffArrivedMsg = lastMessage.message === 'DROPOFF_ARRIVED' || tripUpdate.message === 'DROPOFF_ARRIVED';
+      
+      if (isDriverArrivedMsg) {
+          toast.current?.show({ severity: 'info', summary: 'Conductor llegó', detail: 'Tu conductor ha llegado al punto de recogida.' });
+          setTripState('arrived');
+      }
+      
+      if (isDropoffArrivedMsg) {
+          setTripState('dropoff');
+          toast.current?.show({ severity: 'info', summary: 'Llegada a destino', detail: 'El conductor ha llegado al destino.' });
+      }
+
+      // Actualizar estado local basado en el estado del viaje
+      if (tripUpdate.status === 'ACCEPTED') {
+        const currentTripState = tripStateRef.current;
+        // Only set to pickup if we are NOT currently in 'arrived' state AND this isn't an arrival message
+        if (!isDriverArrivedMsg && currentTripState !== 'arrived' && currentTripState !== 'dropoff') {
+            setTripState('pickup');
+        }
+        
+        // If we received arrival message, force update to arrived (redundant but safe)
+        if (isDriverArrivedMsg) {
+             setTripState('arrived');
+        }
+
+        setCurrentTrip(prev => ({ ...prev, ...tripUpdate }));
+        
+        // Check waiting states for start
+        if (tripUpdate.driverStarted && !tripUpdate.clientStarted) {
+             toast.current?.show({ severity: 'info', summary: 'Conductor listo', detail: 'El conductor ha iniciado el viaje. Por favor confirma.' });
+        } else if (!tripUpdate.driverStarted && tripUpdate.clientStarted) {
+             toast.current?.show({ severity: 'info', summary: 'Esperando', detail: 'Esperando al conductor.' });
+        }
+
+      } else if (tripUpdate.status === 'IN_PROGRESS') {
+        // Solo cambiar a ongoing si NO estamos ya en dropoff (para evitar revertir si llega un mensaje tardío)
+        if (tripStateRef.current !== 'dropoff' && !isDropoffArrivedMsg) {
+            setTripState('ongoing');
+            if (tripStateRef.current !== 'ongoing') {
+                toast.current?.show({ severity: 'success', summary: 'Viaje iniciado', detail: 'El viaje ha comenzado.' });
+            }
+        }
+        setCurrentTrip(prev => ({ ...prev, ...tripUpdate }));
+      } else if (tripUpdate.status === 'COMPLETED') {
+        setTripState('finished'); 
+        setCurrentTrip(prev => ({ ...prev, ...tripUpdate }));
+        if (tripStateRef.current !== 'finished') {
+            toast.current?.show({ severity: 'success', summary: 'Viaje finalizado', detail: 'Has llegado a tu destino.' });
+        }
+      } else if (tripUpdate.status === 'CANCELLED') {
+        setTripState('request');
+        setCurrentTrip(null);
+        toast.current?.show({ severity: 'warn', summary: 'Viaje cancelado', detail: 'El viaje ha sido cancelado.' });
+      }
+      
+      // Manejar lógica específica de confirmación de fin (driverCompleted, clientCompleted)
+      // Si el conductor completó y NO estamos en finished (ni clientCompleted), pasar a dropoff
+      if (tripUpdate.driverCompleted && !tripUpdate.clientCompleted && tripUpdate.status !== 'COMPLETED') {
+         if (tripStateRef.current !== 'dropoff') {
+             setTripState('dropoff'); 
+             toast.current?.show({ severity: 'info', summary: 'Confirmar llegada', detail: 'El conductor ha marcado el viaje como finalizado. Por favor confirma.' });
+         }
+      }
+    }
+  }, [lastMessage]);
+
+  // --- Acciones del Viaje ---
+
+  const handleRequestTrip = async () => {
+    if (!originCoords || !destinationCoords) return;
+
+    setTripState('searching');
+    
+    try {
+      // Limpiar la dirección visual para enviar solo el texto
+      // Formato actual display: "Dirección (Lat, Lng)"
+      const cleanAddress = (val) => val.split('(')[0].trim();
+
+      const payload = {
+        clientId: user.id,
+        originAddress: cleanAddress(originValue),
+        originLatitude: originCoords[0],
+        originLongitude: originCoords[1],
+        destinationAddress: cleanAddress(destinationValue),
+        destinationLatitude: destinationCoords[0],
+        destinationLongitude: destinationCoords[1]
+      };
+
+      const response = await TripService.requestTrip(payload);
+      if (response && response.data) {
+        setCurrentTrip(response.data);
+        // El estado se queda en 'searching' hasta que llegue evento WS de ACCEPTED
+      }
+    } catch (error) {
+      console.error('Error requesting trip:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo solicitar el viaje.' });
+      setTripState('request');
+    }
+  };
+
+  const handleCancelTrip = async () => {
+    if (!currentTrip?.id) {
+      setTripState('request');
+      return;
+    }
+
+    try {
+      await TripService.cancelTrip(currentTrip.id, user.id, 'Cancelado por usuario');
+      setTripState('request');
+      setCurrentTrip(null);
+      toast.current?.show({ severity: 'info', summary: 'Cancelado', detail: 'Solicitud cancelada.' });
+    } catch (error) {
+      console.error('Error canceling trip:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Error al cancelar.' });
+    }
+  };
+
+  const handleConfirmPickup = async () => {
+    if (!currentTrip?.id) return;
+
+    try {
+      await TripService.startTripByClient(currentTrip.id, user.id);
+      // Esperamos confirmación WS de IN_PROGRESS, pero podemos adelantar UI si es necesario o mostrar un loader
+      toast.current?.show({ severity: 'success', summary: 'Confirmado', detail: 'Has confirmado el inicio. Esperando al conductor.' });
+    } catch (error) {
+      console.error('Error starting trip:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Error al confirmar inicio.' });
+    }
+  };
+
+  const handleConfirmDropoff = async () => {
+    if (!currentTrip?.id) return;
+
+    try {
+      await TripService.completeTripByClient(currentTrip.id, user.id);
+      // Esperamos confirmación WS de COMPLETED, pero podemos adelantar UI
+      // Si el conductor ya confirmó, pasará a COMPLETED. Si no, espera.
+    } catch (error) {
+      console.error('Error completing trip:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Error al confirmar finalización.' });
+    }
+  };
+
+  const handleResetTrip = () => {
+    setTripState('request');
+    setOriginValue('');
+    setDestinationValue('');
+    setOriginCoords(null);
+    setDestinationCoords(null);
+    setCurrentTrip(null);
+    setSelectionMode('none');
+    setTempMarker(null);
+  };
+
+  // --- Helpers Mapa ---
   const mockReverseGeocode = (lat, lng) => {
     const streets = ['Av. Universidad Tecnológica', 'Calle 5 de Mayo', 'Blvd. Emiliano Zapata', 'Calle Reforma', 'Av. Constitución', 'Privada de los Pinos', 'Camino Real', 'Calle Niños Héroes'];
     const streetIndex = Math.floor(Math.abs(lng * 10000) % streets.length);
@@ -109,18 +315,7 @@ export default function LandingPage() {
     return `${streets[streetIndex]} #${number}, Emiliano Zapata`;
   };
 
-  // Handlers para cambios en inputs
-  const handleOriginChange = (val) => {
-    setOriginValue(val);
-    if (!val) setOriginCoords(null);
-  };
-
-  const handleDestinationChange = (val) => {
-    setDestinationValue(val);
-    if (!val) setDestinationCoords(null);
-  };
-
-  // Manejadores para activar el modo de selección
+  // Handlers selección mapa
   const handleSelectOriginLocation = () => {
     if (originCoords) {
       setOriginCoords(null);
@@ -132,10 +327,7 @@ export default function LandingPage() {
     } else {
       setSelectionMode('origin');
       setTempMarker(null);
-      // Zoom a la ubicación del usuario al seleccionar origen
-      if (mapRef.current && mapRef.current.recenter) {
-        mapRef.current.recenter();
-      }
+      if (mapRef.current && mapRef.current.recenter) mapRef.current.recenter();
     }
   };
 
@@ -153,19 +345,8 @@ export default function LandingPage() {
     }
   };
 
-  const handleResetTrip = () => {
-    setOriginValue('');
-    setDestinationValue('');
-    setOriginCoords(null);
-    setDestinationCoords(null);
-    setSelectionMode('none');
-    setTempMarker(null);
-  };
-
-  // Manejador de clics en el mapa
   const handleMapClick = (e) => {
     if (selectionMode === 'none') return;
-
     const { lat, lng } = e.latlng;
     setTempMarker({
       position: [lat, lng],
@@ -177,7 +358,6 @@ export default function LandingPage() {
   const handleConfirmSelection = (position) => {
     const coordString = `${position[0].toFixed(7)}, ${position[1].toFixed(7)}`;
     const address = mockReverseGeocode(position[0], position[1]);
-
     const displayValue = `${address} (${coordString})`;
 
     if (selectionMode === 'origin') {
@@ -187,23 +367,17 @@ export default function LandingPage() {
     } else if (selectionMode === 'destination') {
       setDestinationCoords(position);
       setDestinationValue(displayValue);
-
-      // Si no hay origen definido, pasar automáticamente a seleccionar origen
       if (!originCoords) {
         setTimeout(() => {
           setSelectionMode('origin');
           setTempMarker(null);
-          // Zoom a la ubicación del usuario
-          if (mapRef.current && mapRef.current.recenter) {
-            mapRef.current.recenter();
-          }
+          if (mapRef.current && mapRef.current.recenter) mapRef.current.recenter();
         }, 100);
         return;
       } else {
         setSelectionMode('none');
       }
     }
-
     setTempMarker(null);
     setShowTripCard(true);
   };
@@ -214,41 +388,44 @@ export default function LandingPage() {
 
   const isFormValid = originCoords !== null && destinationCoords !== null;
 
-  // Construir lista de marcadores para el mapa
+  // Construir marcadores
   const mapMarkers = [];
-
   if (userLocation && !locationError) {
     mapMarkers.push({ position: userLocation, popup: 'Tu ubicación actual', color: '#0084c4', type: 'circle' });
   }
-
   if (originCoords) {
     mapMarkers.push({ position: originCoords, popup: 'Origen', color: '#089b8f' });
   }
-
   if (destinationCoords) {
     mapMarkers.push({ position: destinationCoords, popup: 'Destino', color: '#a8bf30' });
   }
 
+  // Props comunes para las tarjetas
+  const cardProps = {
+    tripState,
+    tripData: currentTrip,
+    originValue,
+    destinationValue,
+    onSelectOriginLocation: handleSelectOriginLocation,
+    onSelectDestinationLocation: handleSelectDestinationLocation,
+    selectionMode,
+    onResetTrip: handleResetTrip,
+    onRequestTrip: handleRequestTrip,
+    onCancelTrip: handleCancelTrip,
+    onConfirmPickup: handleConfirmPickup,
+    onConfirmDropoff: handleConfirmDropoff,
+    isFormValid,
+    onHide: () => setShowTripCard(false), // Solo para móvil a veces se usa ocultar
+  };
+
   return (
     <div className="w-100 container pb-3">
+      <Toast ref={toast} />
+      
       {/* --- SECCIÓN DEL MAPA Y SOLICITUD --- */}
       <div className="row py-3 position-relative">
         <div className="col-12 d-lg-none">
-          {showTripCard && (
-            <TripStatusMobile
-              initialData={location.state}
-              onHide={() => setShowTripCard(false)}
-              originValue={originValue}
-              destinationValue={destinationValue}
-              onOriginChange={handleOriginChange}
-              onDestinationChange={handleDestinationChange}
-              onSelectOriginLocation={handleSelectOriginLocation}
-              onSelectDestinationLocation={handleSelectDestinationLocation}
-              selectionMode={selectionMode}
-              onResetTrip={handleResetTrip}
-              isFormValid={isFormValid}
-            />
-          )}
+          {showTripCard && <TripStatusMobile {...cardProps} />}
         </div>
 
         <div className="col-12">
@@ -258,7 +435,7 @@ export default function LandingPage() {
                 <i className="pi pi-exclamation-triangle text-warning" style={{ fontSize: '1.2rem' }}></i>
                 <div>
                   <small className="fw-bold d-block">Ubicación no disponible</small>
-                  <small>Es necesario que habilites tu ubicación actual para usar la aplicación correctamente.</small>
+                  <small>Es necesario que habilites tu ubicación actual.</small>
                 </div>
               </div>
               <button className="btn btn-sm btn-outline-warning fw-bold text-dark" onClick={getLocation} disabled={isLocating}>
@@ -267,7 +444,6 @@ export default function LandingPage() {
             </div>
           )}
 
-          {/* Contenedor Relativo para Mapa y Tarjeta Flotante */}
           <div className="position-relative">
             <div className={`card shadow-sm overflow-hidden ${selectionMode !== 'none' ? 'border-2 border-primary' : ''}`}>
               <div
@@ -277,9 +453,18 @@ export default function LandingPage() {
                 }}
                 style={{ cursor: selectionMode !== 'none' ? 'crosshair' : 'pointer' }}
               >
-                <MapView ref={mapRef} center={userLocation || DEFAULT_CENTER} zoom={15} height="100%" markers={mapMarkers} onClick={handleMapClick} tempMarker={tempMarker} onConfirmSelection={handleConfirmSelection} onCancelSelection={handleCancelSelection} />
+                <MapView 
+                  ref={mapRef} 
+                  center={userLocation || DEFAULT_CENTER} 
+                  zoom={15} 
+                  height="100%" 
+                  markers={mapMarkers} 
+                  onClick={handleMapClick} 
+                  tempMarker={tempMarker} 
+                  onConfirmSelection={handleConfirmSelection} 
+                  onCancelSelection={handleCancelSelection} 
+                />
 
-                {/* Mensaje de ayuda flotante durante la selección */}
                 {selectionMode !== 'none' && !tempMarker && (
                   <div 
                     className="position-absolute top-0 start-50 translate-middle-x mt-3 bg-dark text-white px-3 py-2 rounded-pill shadow-sm text-center" 
@@ -295,19 +480,7 @@ export default function LandingPage() {
 
             {showTripCard && (
               <div className="position-absolute end-0 top-0 pe-4 pt-4 d-none d-lg-block" style={{ zIndex: 1015, width: 'auto' }} onClick={(e) => e.stopPropagation()}>
-                <TripStatusCard
-                  onHide={() => setShowTripCard(false)}
-                  initialData={location.state}
-                  originValue={originValue}
-                  destinationValue={destinationValue}
-                  onOriginChange={handleOriginChange}
-                  onDestinationChange={handleDestinationChange}
-                  onSelectOriginLocation={handleSelectOriginLocation}
-                  onSelectDestinationLocation={handleSelectDestinationLocation}
-                  selectionMode={selectionMode}
-                  onResetTrip={handleResetTrip}
-                  isFormValid={isFormValid}
-                />
+                <TripStatusCard {...cardProps} />
               </div>
             )}
           </div>
@@ -316,7 +489,6 @@ export default function LandingPage() {
 
       {/* --- SECCIÓN INFERIOR --- */}
       <div className="row g-3">
-        {/* TARJETA 1: Herramientas */}
         <div className="col-12 col-lg-4">
           <div className="card shadow-sm h-100">
             <div className="card-body p-3">
@@ -333,40 +505,51 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* TARJETA 2: Actividad Reciente */}
         <div className="col-12 col-lg-4">
           <div className="card shadow-sm h-100">
             <div className="card-body p-3">
               <h4 className="fw-bold mb-3">Actividad reciente</h4>
-
               <div className="d-flex flex-column">
-                <p className="text-muted small mb-0 text-center">No hay actividad reciente.</p>
+                {lastCompletedTrip ? (
+                    <div 
+                        className="d-flex align-items-center gap-3 p-2 hoverable rounded cursor-pointer"
+                        onClick={() => navigate('/p/trips', { state: { openTripId: lastCompletedTrip.id } })}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        <div className="rounded-circle bg-light d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
+                            <Icon path={mdiHistory} size={0.8} className="text-dark" />
+                        </div>
+                        <div className="overflow-hidden">
+                            <p className="fw-bold mb-0 text-truncate">{lastCompletedTrip.destinationAddress || lastCompletedTrip.destination}</p>
+                            <small className="text-muted">{new Date(lastCompletedTrip.updatedAt).toLocaleDateString()}</small>
+                        </div>
+                        <Icon path={mdiMessageText} size={0.8} className="ms-auto text-secondary opacity-50" />
+                    </div>
+                ) : (
+                    <p className="text-muted small mb-0 text-center">No hay actividad reciente.</p>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* TARJETA 3: Mi Calificación */}
         <div className="col-12 col-lg-4">
           <div className="card shadow-sm h-100">
             <div className="card-body p-3 d-flex flex-column align-items-center justify-content-center text-center">
               <h4 className="fw-bold w-100 text-start mb-3">Mi calificación</h4>
-
               <div className="d-flex align-items-center gap-2 mb-2">
                 <Avatar image={user?.avatar || user?.avatarUrl || "https://primefaces.org/cdn/primereact/images/avatar/xuxuefeng.png"} size="large" shape="circle" className="p-overlay-badge flex-shrink-0" style={{ width: '50px', height: '50px' }} />
-                <span className="fs-4 fw-normal">{user?.name} {user?.paternalSurname} {user?.maternalSurname}</span>
+                <span className="fs-4 fw-normal">
+                  {user?.name} {user?.paternalSurname} {user?.maternalSurname || '?'}
+                </span>
               </div>
-
               <div className="d-flex align-items-center gap-2 mb-2">
                 <Icon path={mdiStar} size={2.5} style={{ color: 'var(--color-teal-tint-1)' }} />
                 <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
                   {user?.rating || '5.0'}
                 </span>
               </div>
-
-              <a href="#" className="text-muted text-decoration-none small mt-auto">
-                Conoce el por qué de tu calificación
-              </a>
+              <a href="#" className="text-muted text-decoration-none small mt-auto">Conoce el por qué de tu calificación</a>
             </div>
           </div>
         </div>

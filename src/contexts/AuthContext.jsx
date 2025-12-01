@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
             phone: decodedToken.phone,
             status: decodedToken.status,
             createdAt: decodedToken.createdAt,
+            driverProfileId: decodedToken.driverProfileId,
           });
           setIsAuthenticated(true);
         } else {

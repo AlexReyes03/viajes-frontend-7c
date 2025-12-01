@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from 'primereact/button';
 import { Avatar } from 'primereact/avatar';
 import { InputText } from 'primereact/inputtext';
@@ -6,19 +6,49 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import Icon from '@mdi/react';
 import { mdiCrosshairsGps, mdiArrowRight, mdiHome, mdiCash, mdiStar } from '@mdi/js';
 
-export default function TripStatusMobile({ originValue = '', destinationValue = '', onSelectOriginLocation, onSelectDestinationLocation, selectionMode, onResetTrip, isFormValid }) {
-  const [tripState, setTripState] = useState('request');
+export default function TripStatusMobile({ 
+  tripState = 'request',
+  tripData = null,
+  originValue = '', 
+  destinationValue = '', 
+  onSelectOriginLocation, 
+  onSelectDestinationLocation, 
+  selectionMode, 
+  onResetTrip, 
+  onRequestTrip,
+  onCancelTrip,
+  onConfirmPickup,
+  onConfirmDropoff,
+  isFormValid,
+  onHide 
+}) {
+  const [loadingAction, setLoadingAction] = React.useState(null);
+
+  React.useEffect(() => {
+      setLoadingAction(null);
+  }, [tripState]);
+
+  const handleAction = async (actionName, callback) => {
+      if (loadingAction) return;
+      setLoadingAction(actionName);
+      try {
+          await callback();
+      } catch (error) {
+          console.error(error);
+          setLoadingAction(null);
+      }
+  };
 
   const DriverInfo = () => (
     <div className="d-flex align-items-center gap-3 mb-3">
       <Avatar icon="pi pi-user" size="large" shape="circle" className="bg-secondary text-white" />
       <div>
-        <h6 className="fw-bold mb-0">Ignacio Sánchez Ramírez</h6>
+        <h6 className="fw-bold mb-0">{tripData?.driverName || 'Conductor Asignado'}</h6>
         <div className="small text-muted d-flex align-items-center gap-1">
           <Icon path={mdiStar} size={0.7} className="text-dark" />
           <span className="fw-bold text-dark">4.9</span>
           <span>•</span>
-          <span>512 viajes completados</span>
+          <span>{tripData?.driverLicense || 'Licencia'}</span>
         </div>
       </div>
     </div>
@@ -32,9 +62,9 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
             <Icon path={mdiCrosshairsGps} size={1} className="text-dark" />
           </div>
           <div className="d-flex flex-column lh-1 overflow-hidden w-100">
-            <span className="small fw-bold">Origen • 9:04 PM</span>
+            <span className="small fw-bold">Origen</span>
             <span className="small text-muted text-truncate d-block w-100">
-              {originValue || 'Ubicación actual'}
+              {tripData?.originAddress || tripData?.origin || originValue || 'Ubicación actual'}
             </span>
           </div>
         </div>
@@ -45,9 +75,9 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
             <Icon path={mdiHome} size={1} className="text-dark" />
           </div>
           <div className="d-flex flex-column lh-1 overflow-hidden w-100">
-            <span className="small fw-bold">Destino • 9:35 PM</span>
+            <span className="small fw-bold">Destino</span>
             <span className="small text-muted text-truncate d-block w-100">
-              {destinationValue || 'Destino seleccionado'}
+              {tripData?.destinationAddress || tripData?.destination || destinationValue || 'Destino seleccionado'}
             </span>
           </div>
         </div>
@@ -61,7 +91,7 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
         <Icon path={mdiCash} size={1} className="text-dark" />
         <div className="d-flex flex-column lh-1">
           <span className="small fw-bold">Efectivo</span>
-          <span className="fw-normal">$50.00 MXN</span>
+          <span className="fw-normal">${tripData?.fare?.toFixed(2) || '50.00'} MXN</span>
         </div>
       </div>
     </div>
@@ -71,7 +101,9 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
 
   const RequestView = () => (
     <>
-      <h5 className="fw-bold mb-3">Solicitar viaje</h5>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h5 className="fw-bold mb-0">Solicitar viaje</h5>
+      </div>
 
       {/* Input Destino */}
       <div className={`d-flex align-items-center bg-secondary bg-opacity-10 rounded-3 p-2 mb-3 justify-content-between ${selectionMode === 'destination' ? 'border border-2 border-info' : ''}`}>
@@ -105,7 +137,13 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
         <span className="fw-bold text-success">$50.00 MXN</span>
       </div>
 
-      <Button label="Solicitar Viaje" className="w-100 btn-lime mb-3 border-0" onClick={() => setTripState('searching')} disabled={!isFormValid} />
+      <Button 
+        label="Solicitar Viaje" 
+        className="w-100 btn-lime mb-3 border-0" 
+        onClick={() => handleAction('request', onRequestTrip)} 
+        disabled={!isFormValid || loadingAction !== null}
+        loading={loadingAction === 'request'} 
+      />
 
       <a href="#" className="small text-decoration-underline text-dark fw-semibold">
         Información sobre viajes
@@ -119,30 +157,64 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
       <div className="mb-4">
         <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="4" animationDuration=".5s" />
       </div>
-      <p className="text-muted small mb-4">Estamos contactando a los conductores cercanos. Por favor espera un momento.</p>
+      <p className="text-muted small mb-4">Estamos contactando a los conductores cercanos.</p>
 
-      <Button label="Cancelar solicitud" className="p-button-outlined p-button-secondary p-button-sm w-100 mb-2" onClick={() => setTripState('request')} />
-      <small className="text-muted cursor-pointer d-block mt-3" onClick={() => setTripState('pickup')}>
-        (Simular conductor encontrado)
-      </small>
+      <Button 
+        label="Cancelar solicitud" 
+        className="p-button-outlined p-button-secondary p-button-sm w-100 mb-2" 
+        onClick={() => handleAction('cancel_search', onCancelTrip)}
+        disabled={loadingAction !== null}
+        loading={loadingAction === 'cancel_search'}
+      />
     </div>
   );
 
   const PickupView = () => (
     <>
-      <h5 className="fw-bold mb-3">¡Tu conductor ha llegado!</h5>
+      <h5 className="fw-bold mb-3">Conductor en camino</h5>
 
       <div className="alert alert-info border-0 d-flex align-items-center gap-2 mb-3 p-2">
         <Icon path={mdiCrosshairsGps} size={0.8} />
         <small className="fw-semibold" style={{ fontSize: '0.8rem' }}>
-          El conductor está esperando.
+          El conductor ha aceptado y está en camino.
+        </small>
+      </div>
+
+      <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
+      <DriverInfo />
+      
+      <Button 
+        label="Cancelar Viaje" 
+        className="w-100 p-button-danger p-button-outlined mt-3 py-2 fs-6" 
+        onClick={() => handleAction('cancel_pickup', onCancelTrip)}
+        disabled={loadingAction !== null}
+        loading={loadingAction === 'cancel_pickup'}
+      />
+    </>
+  );
+
+  const ArrivedView = () => (
+    <>
+      <h5 className="fw-bold mb-3">¡Tu conductor ha llegado!</h5>
+
+      <div className="alert alert-success bg-opacity-10 border-0 d-flex align-items-center gap-2 mb-3 p-2">
+        <Icon path={mdiCrosshairsGps} size={0.8} className="text-success" />
+        <small className="fw-semibold text-success" style={{ fontSize: '0.8rem' }}>
+          El conductor te espera en el punto de partida.
         </small>
       </div>
 
       <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
       <DriverInfo />
 
-      <Button label="Confirmar Inicio" className="w-100 btn-lime mt-3 py-2 fs-6 border-0" icon="pi pi-check" onClick={() => setTripState('ongoing')} />
+      <Button 
+        label="Confirmar Inicio" 
+        className="w-100 btn-lime py-2 mt-3 fs-6 border-0" 
+        icon="pi pi-check" 
+        onClick={() => handleAction('start', onConfirmPickup)} 
+        disabled={loadingAction !== null}
+        loading={loadingAction === 'start'}
+      />
     </>
   );
 
@@ -157,12 +229,6 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
 
       <p className="small text-muted mb-2 fw-bold mt-2">Detalles del pago</p>
       <PaymentDetails />
-
-      <div className="mt-3 text-end">
-        <small className="text-muted cursor-pointer" onClick={() => setTripState('dropoff')}>
-          Simular llegada
-        </small>
-      </div>
     </>
   );
 
@@ -173,20 +239,29 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
       <div className="alert alert-success bg-opacity-10 border-0 d-flex align-items-center gap-2 mb-3 p-2">
         <Icon path={mdiHome} size={0.8} className="text-success" />
         <small className="fw-bold text-success" style={{ fontSize: '0.8rem' }}>
-          Has llegado a tu destino.
+          El conductor ha marcado el fin del viaje.
         </small>
       </div>
 
       <p className="small text-muted mb-2 fw-bold">Monto a pagar</p>
       <PaymentDetails />
 
-      <Button label="Confirmar Finalización" className="w-100 btn-lime py-2 mt-3 fs-6 border-0" icon="pi pi-check-circle" onClick={() => setTripState('finished')} />
+      <p className="text-muted small mt-3 mb-4">Por favor realiza el pago al conductor y confirma para finalizar.</p>
+
+      <Button 
+        label="Confirmar Finalización" 
+        className="w-100 btn-lime py-2 mt-3 fs-6 border-0" 
+        icon="pi pi-check-circle" 
+        onClick={() => handleAction('complete', onConfirmDropoff)}
+        disabled={loadingAction !== null}
+        loading={loadingAction === 'complete'}
+      />
     </>
   );
 
   const FinishedView = () => (
     <>
-      <h5 className="fw-bold mb-3">Has llegado a tu destino</h5>
+      <h5 className="fw-bold mb-3">Resumen del Viaje</h5>
       <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
       <DriverInfo />
 
@@ -197,12 +272,9 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
       <PaymentDetails />
 
       <Button
-        label="Finalizar Viaje"
+        label="Cerrar"
         className="w-100 btn-lime mt-4 py-2 fs-5 border-0"
-        onClick={() => {
-          setTripState('request');
-          if (onResetTrip) onResetTrip();
-        }}
+        onClick={onResetTrip}
       />
     </>
   );
@@ -213,6 +285,7 @@ export default function TripStatusMobile({ originValue = '', destinationValue = 
         {tripState === 'request' && <RequestView />}
         {tripState === 'searching' && <SearchingView />}
         {tripState === 'pickup' && <PickupView />}
+        {tripState === 'arrived' && <ArrivedView />}
         {tripState === 'ongoing' && <OngoingView />}
         {tripState === 'dropoff' && <DropoffView />}
         {tripState === 'finished' && <FinishedView />}

@@ -83,7 +83,7 @@ export default function RecoverOTPForm() {
                 <Link to="/recover">
                   <Button label="Volver" className="p-button-outlined fw-bold px-4" style={{ color: 'var(--color-teal-tint-1)', borderColor: 'var(--color-teal-tint-1)' }} />
                 </Link>
-                <Button label="Continuar" className="btn-lime px-4" type="submit" loading={loading} />
+                <Button label="Continuar" className="btn-lime px-4" type="submit" loading={loading} disabled={loading || !code || code.length !== 6} />
               </div>
             </form>
           </div>

@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { Avatar } from 'primereact/avatar';
 import Icon from '@mdi/react';
-import {
-  mdiMenuDown,
-  mdiMenuUp,
-  mdiArrowLeft,
-  mdiHeadset, // Icono para soporte
-} from '@mdi/js';
+import { mdiMenuDown, mdiMenuUp, mdiArrowLeft, mdiHeadset } from '@mdi/js';
 
 // Datos simulados de usuarios
 const usersData = [
@@ -19,7 +14,7 @@ const usersData = [
   {
     id: 2,
     name: 'Soporte',
-    avatar: null, // null para usar icono
+    avatar: null,
     role: 'support',
   },
 ];
@@ -38,13 +33,12 @@ export default function Messages() {
   // Manejador de selección de usuario (Toggle)
   const handleUserClick = (id) => {
     if (selectedUserId === id) {
-      setSelectedUserId(null); // Regresar a Inicio si es el mismo
+      setSelectedUserId(null);
     } else {
       setSelectedUserId(id);
     }
   };
 
-  // Encontrar usuario activo
   const activeUser = usersData.find((u) => u.id === selectedUserId);
 
   return (
@@ -52,53 +46,55 @@ export default function Messages() {
       <div className="row g-4">
         {/* --- COLUMNA IZQUIERDA (Lista de Usuarios) --- */}
         <div className="col-12 col-lg-4">
-          {/* Header del Sidebar (Toggle) */}
-          <div className="d-flex align-items-center gap-3 mb-3 cursor-pointer user-select-none" onClick={() => setIsSidebarOpen(!isSidebarOpen)} style={{ cursor: 'pointer' }}>
-            <Icon path={isSidebarOpen ? mdiMenuDown : mdiMenuUp} size={1} />
-            <h5 className="fw-normal mb-0">Mensajes directos</h5>
-          </div>
+          {/* NUEVO: Todo envuelto en una Card principal */}
+          <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', backgroundColor: '#fcf7ff' }}>
+            <div className="card-body p-4">
+              {/* Header del Sidebar */}
+              <div className="d-flex align-items-center gap-3 mb-4 cursor-pointer user-select-none" onClick={() => setIsSidebarOpen(!isSidebarOpen)} style={{ cursor: 'pointer' }}>
+                <Icon path={isSidebarOpen ? mdiMenuDown : mdiMenuUp} size={1} />
+                <h5 className="fw-normal mb-0">Mensajes directos</h5>
+              </div>
 
-          {/* Lista de Usuarios (Con animación CSS) */}
-          <div
-            style={{
-              maxHeight: isSidebarOpen ? '500px' : '0',
-              opacity: isSidebarOpen ? 1 : 0,
-              overflow: 'hidden',
-              transition: 'all 0.4s ease-in-out',
-            }}
-          >
-            <div className="d-flex flex-column gap-3">
-              {usersData.map((user) => {
-                const isActive = selectedUserId === user.id;
+              {/* Lista de Usuarios */}
+              <div
+                style={{
+                  maxHeight: isSidebarOpen ? '500px' : '0',
+                  opacity: isSidebarOpen ? 1 : 0,
+                  overflow: 'hidden',
+                  transition: 'all 0.4s ease-in-out',
+                }}
+              >
+                <div className="d-flex flex-column gap-3">
+                  {usersData.map((user) => {
+                    const isActive = selectedUserId === user.id;
 
-                return (
-                  <div
-                    key={user.id}
-                    onClick={() => handleUserClick(user.id)}
-                    className="card border shadow-sm p-3 d-flex flex-row align-items-center gap-3"
-                    style={{
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      // Estilos condicionales para el activo
-                      backgroundColor: isActive ? '#e0f7fa' : '#fff', // Fondo cyan claro si está activo
-                      borderColor: isActive ? 'var(--color-cyan-tint-2)' : '#dee2e6',
-                    }}
-                  >
-                    {/* Avatar Condicional */}
-                    {user.role === 'support' ? (
-                      <div className="rounded-circle d-flex align-items-center justify-content-center border" style={{ width: '40px', height: '40px', backgroundColor: '#fff' }}>
-                        {/* Icono de VeloCity o Soporte */}
-                        <Icon path={mdiHeadset} size={1} color="var(--color-teal-tint-1)" />
+                    return (
+                      <div
+                        key={user.id}
+                        onClick={() => handleUserClick(user.id)}
+                        className="card border shadow-sm p-3 d-flex flex-row align-items-center gap-3"
+                        style={{
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          backgroundColor: isActive ? '#e0f7fa' : '#fff',
+                          borderColor: isActive ? 'var(--color-cyan-tint-2)' : '#dee2e6',
+                        }}
+                      >
+                        {user.role === 'support' ? (
+                          <div className="rounded-circle d-flex align-items-center justify-content-center border" style={{ width: '40px', height: '40px', backgroundColor: '#fff' }}>
+                            <Icon path={mdiHeadset} size={1} color="var(--color-teal-tint-1)" />
+                          </div>
+                        ) : (
+                          <Avatar image={user.avatar} shape="circle" size="normal" />
+                        )}
+
+                        <span className="fw-bold text-dark">{user.name}</span>
                       </div>
-                    ) : (
-                      <Avatar image={user.avatar} shape="circle" size="normal" />
-                    )}
-
-                    <span className="fw-bold text-dark">{user.name}</span>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -106,7 +102,7 @@ export default function Messages() {
         {/* --- COLUMNA DERECHA (Contenido Principal) --- */}
         <div className="col-12 col-lg-8">
           <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', minHeight: '600px', backgroundColor: '#fcf7ff' }}>
-            {/* VISTA 1: INICIO (Cuando no hay usuario seleccionado) */}
+            {/* VISTA 1: INICIO */}
             {!selectedUserId && (
               <div className="card-body p-4">
                 <h5 className="mb-3">Inicio</h5>
@@ -120,7 +116,7 @@ export default function Messages() {
               </div>
             )}
 
-            {/* VISTA 2: CHAT (Cuando hay usuario seleccionado) */}
+            {/* VISTA 2: CHAT */}
             {selectedUserId && activeUser && (
               <div className="card-body p-0 d-flex flex-column" style={{ height: '600px' }}>
                 {/* Header del Chat */}
@@ -140,7 +136,7 @@ export default function Messages() {
                   <h5 className="mb-0 fw-normal">{activeUser.name}</h5>
                 </div>
 
-                {/* Área de Mensajes (Scrollable) */}
+                {/* Área de Mensajes */}
                 <div className="flex-grow-1 p-4 overflow-auto" style={{ backgroundColor: '#fcf7ff' }}>
                   <div className="d-flex flex-column gap-3">
                     {messagesData.map((msg) => (
@@ -159,16 +155,18 @@ export default function Messages() {
 
                 {/* Footer (Input) */}
                 <div className="p-4 mt-auto">
-                  <div
-                    className="w-100 p-3"
+                  <input
+                    type="text"
+                    className="form-control w-100 p-3"
+                    placeholder="Escribe un mensaje..."
                     style={{
-                      backgroundColor: '#e9daed', // Color lila grisáceo similar a la imagen
+                      backgroundColor: '#e9daed',
                       borderRadius: '8px',
-                      color: '#6c757d',
+                      border: 'none',
+                      boxShadow: 'none',
+                      color: '#000',
                     }}
-                  >
-                    Escribe un mensaje...
-                  </div>
+                  />
                 </div>
               </div>
             )}

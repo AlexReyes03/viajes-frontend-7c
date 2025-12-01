@@ -66,7 +66,7 @@ export default function LoginForm() {
                 </Link>
               </div>
 
-              <Button label="Iniciar Sesión" className="w-100 mt-4 btn-lime" type="submit" loading={loading} />
+              <Button label="Iniciar Sesión" className="w-100 mt-4 btn-lime" type="submit" loading={loading} disabled={loading || !username || !password} />
             </form>
           </div>
         </div>

@@ -129,6 +129,19 @@ export default function RegisterForm() {
     }
   };
 
+  const isFormValid = () => {
+    const basicFields = formData.nombre && formData.apPaterno && formData.telefono && formData.usuario && formData.email && formData.pass && formData.confirmPass;
+    
+    if (!basicFields) return false;
+    
+    if (formData.isDriver) {
+      const driverFields = formData.licenseNumber && formData.vehicleBrand && formData.vehicleModel && formData.vehicleYear && formData.vehiclePlate && formData.vehicleColor && formData.driverDocument;
+      return driverFields;
+    }
+    
+    return true;
+  };
+
   return (
     <div className="row justify-content-center">
       <Toast ref={toast} />
@@ -259,7 +272,7 @@ export default function RegisterForm() {
               )}
 
               <div className="col-12 mt-4 text-end">
-                <Button label="Crear Cuenta" className="btn-lime px-5" type="submit" loading={loading} />
+                <Button label="Crear Cuenta" className="btn-lime px-5" type="submit" loading={loading} disabled={loading || !isFormValid()} />
               </div>
             </form>
           </div>

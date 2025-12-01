@@ -95,7 +95,7 @@ export default function RecoverPasswordForm() {
                 <Link to="/login">
                   <Button label="Cancelar" className="p-button-outlined fw-bold px-4" style={{ color: 'var(--color-teal-tint-1)', borderColor: 'var(--color-teal-tint-1)' }} />
                 </Link>
-                <Button label="Guardar" className="btn-lime px-4" type="submit" loading={loading} />
+                <Button label="Guardar" className="btn-lime px-4" type="submit" loading={loading} disabled={loading || !newPassword || !confirmPassword} />
               </div>
             </form>
           </div>

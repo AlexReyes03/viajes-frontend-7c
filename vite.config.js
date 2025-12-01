@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/velocity',
+  define: {
+    global: 'window',
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets'

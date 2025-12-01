@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Icon from '@mdi/react';
 import { mdiCurrencyUsd, mdiCarMultiple, mdiStar, mdiDotsHorizontal, mdiCalendar, mdiFilterOff, mdiAccountOutline, mdiCrosshairsGps, mdiCash, mdiMagnify } from '@mdi/js';
 import { Button } from 'primereact/button';
@@ -9,97 +9,91 @@ import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import MapThumbnail from '../../../components/global/MapThumbnail';
 import MapView from '../../../components/global/MapView';
 
+import { useAuth } from '../../../contexts/AuthContext';
+import * as TripService from '../../../api/trip/trip.service';
+
 /**
  * TripHistory - Driver Trip History View
  * Shows driver's trip statistics and history
- *
- * Features:
- * - Total earnings statistics with chart
- * - Total trips count with chart
- * - Average rating with chart
- * - Date range filters
- * - Latest trip activity
- * - Previous trips list
- *
- * Ready for backend integration:
- * - Replace mock data with API calls
- * - Implement trip details modal
- * - Connect date filters to API
  */
 export default function TripHistory() {
+  const { user } = useAuth();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - Ready to replace with API calls
+  const [historyData, setHistoryData] = useState({
+    trips: [],
+    totalIncome: 0
+  });
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const profileId = user.driverProfileId || user.id;
+        const response = await TripService.getDriverHistory(profileId);
+        if (response && response.data) {
+            setHistoryData({
+                trips: response.data.trips || [],
+                totalIncome: response.data.totalIncome || 0
+            });
+        }
+      } catch (error) {
+        console.error('Error fetching history:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [user]);
+
+  // Derived statistics
   const statistics = {
-    totalEarnings: 12450.5,
-    totalTrips: 156,
-    averageRating: 4.8,
+    totalEarnings: historyData.totalIncome,
+    totalTrips: historyData.trips.filter(t => t.status === 'COMPLETED').length,
+    averageRating: user?.rating || 5.0, // Rating is usually on user profile
   };
 
+  // Process trips for display
+  const tripsList = useMemo(() => {
+      return historyData.trips
+        .filter(t => t.status === 'COMPLETED') // Show mostly completed trips in history
+        .map(t => ({
+            id: t.id,
+            destination: t.destinationAddress || t.destination,
+            date: new Date(t.status === 'COMPLETED' ? (t.updatedAt || Date.now()) : Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
+            time: new Date(t.status === 'COMPLETED' ? (t.updatedAt || Date.now()) : Date.now()).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+            amount: t.fare,
+            currency: 'MXN',
+            origin: { 
+                lat: t.originLatitude || 0, 
+                lng: t.originLongitude || 0, 
+                name: t.originAddress || t.origin 
+            },
+            destinationCoords: { 
+                lat: t.destinationLatitude || 0, 
+                lng: t.destinationLongitude || 0, 
+                name: t.destinationAddress || t.destination 
+            },
+            passengerName: t.clientName || 'Pasajero',
+            rating: t.rating || 0,
+            fullDate: t.updatedAt
+        }))
+        .sort((a, b) => new Date(b.fullDate) - new Date(a.fullDate));
+  }, [historyData.trips]);
+
+  // TODO: Backend should provide chart data. For now we use static/mock data for charts to keep UI layout.
   // Mock chart data for statistics cards
   const earningsChartData = [{ value: 8500 }, { value: 9200 }, { value: 10100 }, { value: 9800 }, { value: 11200 }, { value: 12450.5 }];
-
   const tripsChartData = [{ value: 100 }, { value: 115 }, { value: 128 }, { value: 135 }, { value: 148 }, { value: 156 }];
-
   const ratingChartData = [{ value: 4.3 }, { value: 4.5 }, { value: 4.6 }, { value: 4.7 }, { value: 4.75 }, { value: 4.8 }];
 
-  const latestTrip = {
-    id: 1,
-    destination: 'Casa en Privada Valle de San Luis...',
-    date: '24 oct',
-    time: '03:24 pm',
-    amount: 219.41,
-    currency: 'MXN',
-    origin: { lat: 18.8568, lng: -98.7993, name: 'Universidad Tecnológica' },
-    destinationCoords: { lat: 18.87, lng: -98.81, name: 'Casa en Privada Valle' },
-    passengerName: 'Carlos Martínez',
-    rating: 5,
-    fullDate: new Date('2024-10-24'),
-  };
-
-  const previousTrips = [
-    {
-      id: 2,
-      destination: 'Casa en Privada Valle de San Luis...',
-      date: '22 oct',
-      time: '2:22 pm',
-      amount: 219.41,
-      currency: 'MXN',
-      origin: { lat: 18.85, lng: -98.79, name: 'Plaza Las Américas' },
-      destinationCoords: { lat: 18.865, lng: -98.8, name: 'Casa en Privada Valle' },
-      passengerName: 'María López',
-      rating: 4.5,
-      fullDate: new Date('2025-10-22'),
-    },
-    {
-      id: 3,
-      destination: 'Casa en Privada Valle de San Luis...',
-      date: '18 oct',
-      time: '6:33 pm',
-      amount: 219.41,
-      currency: 'MXN',
-      origin: { lat: 18.86, lng: -98.805, name: 'Centro Comercial' },
-      destinationCoords: { lat: 18.87, lng: -98.81, name: 'Casa en Privada Valle' },
-      passengerName: 'Juan Iturbide',
-      rating: 5,
-      fullDate: new Date('2025-10-18'),
-    },
-    {
-      id: 4,
-      destination: 'Casa en Privada Valle de San Luis...',
-      date: '15 oct',
-      time: '4:15 pm',
-      amount: 219.41,
-      currency: 'MXN',
-      origin: { lat: 18.845, lng: -98.785, name: 'Hospital Regional' },
-      destinationCoords: { lat: 18.87, lng: -98.81, name: 'Casa en Privada Valle' },
-      passengerName: 'Ana García',
-      rating: 4.8,
-      fullDate: new Date('2025-10-15'),
-    },
-  ];
+  const latestTrip = tripsList.length > 0 ? tripsList[0] : null;
+  const previousTrips = tripsList.length > 1 ? tripsList.slice(1) : [];
 
   // Filter trips by search term
   const filteredTrips = useMemo(() => {

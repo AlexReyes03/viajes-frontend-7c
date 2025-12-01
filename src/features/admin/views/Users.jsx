@@ -79,9 +79,7 @@ export default function Users() {
     setSelectedUser({
       ...user,
       name: user.originalName, // Use original first name
-      // ensure role is set correctly for dropdown (using role name or id logic)
-      // simpler to just edit the role object or name if backend supports it
-      // For this form we use the mapped "type" string for the dropdown value
+      type: user.role ? user.role.name.toUpperCase() : 'CLIENTE',
     });
     setShowEditDialog(true);
   };
