@@ -53,3 +53,46 @@ export const changePassword = async (currentPassword, newPassword) => {
 
   return payload;
 };
+
+/**
+ * Complete driver registration with profile, vehicle, and document
+ * @param {number} userId - User ID from initial registration
+ * @param {string} licenseNumber - Driver's license number
+ * @param {object} vehicleData - Vehicle information
+ * @param {File} documentFile - PDF file for criminal record
+ * @returns {Promise} - Promise that resolves when all steps complete
+ */
+export const completeDriverRegistration = async (userId, licenseNumber, vehicleData, documentFile) => {
+  try {
+    // Step 1: Create driver profile
+    const profileResponse = await request(`/drivers/profile?userId=${userId}&licenseNumber=${licenseNumber}`, {
+      method: 'POST'
+    });
+
+    const driverProfileId = profileResponse.data?.driverProfileId;
+    if (!driverProfileId) {
+      throw new Error('No se pudo obtener el ID del perfil de conductor');
+    }
+
+    // Step 2: Add vehicle
+    await request(`/drivers/profile/${driverProfileId}/vehicles`, {
+      method: 'POST',
+      body: vehicleData
+    });
+
+    // Step 3: Upload document
+    const formData = new FormData();
+    formData.append('file', documentFile);
+    formData.append('documentType', 'NO_CRIMINAL_RECORD');
+
+    await request(`/drivers/profile/${driverProfileId}/documents/upload`, {
+      method: 'POST',
+      body: formData,
+      isMultipart: true
+    });
+
+    return { success: true, message: 'Registro de conductor completado exitosamente' };
+  } catch (error) {
+    throw error;
+  }
+};
