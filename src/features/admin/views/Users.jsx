@@ -1,31 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
-import FilterBar from '../components/FilterBar';
+import { Toast } from 'primereact/toast';
+import Icon from '@mdi/react';
+import { mdiMagnify } from '@mdi/js';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
-
-// Mock data for users table - defined outside component to avoid recreating on each render
-const MOCK_USERS = [
-  { id: 1, name: 'Daniela Carrate', email: 'daniela@gmail.com', type: 'Conductor', status: 'Activo' },
-  { id: 2, name: 'Isael Alejandro', email: 'isael@gmail.com', type: 'Cliente', status: 'Activo' },
-  { id: 3, name: 'Jafet Bahena', email: 'jafet@gmail.com', type: 'Cliente', status: 'Activo' },
-  { id: 4, name: 'Danna Sanchez', email: 'danna@gmail.com', type: 'Conductor', status: 'Activo' },
-  { id: 5, name: 'Loreley Carrillo', email: 'loreley@gmail.com', type: 'Cliente', status: 'Activo' },
-  { id: 6, name: 'José Arias', email: 'jose@gmail.com', type: 'Conductor', status: 'Activo' },
-  { id: 7, name: 'Ángel Aguilar', email: 'angel@gmail.com', type: 'Cliente', status: 'Inactivo' },
-];
+import { UserService } from '../../../api/user/user.service';
 
 // Admin users management view
 export default function Users() {
-  // State for filters
-  const [filters, setFilters] = useState({
-    userType: '',
-    status: '',
-    search: '',
-  });
+  const toast = useRef(null);
+  // State for users and filters
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,76 +26,164 @@ export default function Users() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // Filter users based on current filters
+  // Fetch users on mount
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await UserService.getAllUsers();
+      if (response && response.data) {
+        // Transform data for UI compatibility
+        const transformedUsers = response.data.map((user) => ({
+          ...user,
+          // Store original fields for editing
+          originalName: user.name,
+          // Create display fields for DataTable
+          name: `${user.name} ${user.surname} ${user.lastname || ''}`.trim(),
+          type: user.role ? user.role.name.charAt(0).toUpperCase() + user.role.name.slice(1).toLowerCase() : 'Desconocido',
+          status: user.status, // Pass boolean directly for StatusBadge to handle
+        }));
+        setUsers(transformedUsers);
+      } else {
+        setUsers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los usuarios' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Filter users based on search term
   const filteredUsers = useMemo(() => {
-    return MOCK_USERS.filter((user) => {
-      const matchesType = !filters.userType || user.type === filters.userType;
-      const matchesStatus = !filters.status || user.status === filters.status;
-      const matchesSearch = !filters.search || user.name.toLowerCase().includes(filters.search.toLowerCase()) || user.email.toLowerCase().includes(filters.search.toLowerCase());
+    if (!searchTerm) return users;
 
-      return matchesType && matchesStatus && matchesSearch;
+    const lowerSearch = searchTerm.toLowerCase();
+    return users.filter((user) => {
+      return user.name.toLowerCase().includes(lowerSearch) || user.email.toLowerCase().includes(lowerSearch) || (user.username && user.username.toLowerCase().includes(lowerSearch)) || (user.type && user.type.toLowerCase().includes(lowerSearch));
     });
-  }, [filters]);
+  }, [users, searchTerm]);
 
-  // Calculate total pages
-  const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
-
-  // Get paginated data
-  const paginatedUsers = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    const end = start + pageSize;
-    return filteredUsers.slice(start, end);
-  }, [filteredUsers, currentPage, pageSize]);
-
-  // Handle filter changes
-  const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
+  // Handle search change
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
   };
 
   // Handle edit user
   const handleEdit = (user) => {
-    setSelectedUser({ ...user });
+    // Map type/status back to editable values if needed
+    setSelectedUser({
+      ...user,
+      name: user.originalName, // Use original first name
+      // ensure role is set correctly for dropdown (using role name or id logic)
+      // simpler to just edit the role object or name if backend supports it
+      // For this form we use the mapped "type" string for the dropdown value
+    });
     setShowEditDialog(true);
   };
 
   // Handle toggle user status
-  const handleToggleStatus = (user) => {
-    console.log('Toggle status for user:', user);
+  const handleToggleStatus = async (user) => {
+    try {
+      const updatedUser = { ...user, status: !user.status };
+      // Restore original name property for the backend object if it was overwritten
+      updatedUser.name = user.originalName;
+
+      await UserService.updateUser(updatedUser);
+      toast.current?.show({ severity: 'success', summary: 'Éxito', detail: `Usuario ${updatedUser.status ? 'activado' : 'desactivado'} correctamente` });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado' });
+    }
   };
 
   // Handle save user changes
-  const handleSaveUser = () => {
-    console.log('Saving user:', selectedUser);
-    setShowEditDialog(false);
-    setSelectedUser(null);
-  };
+  const handleSaveUser = async () => {
+    try {
+      // Construct payload
+      // We need to map the 'type' string back to a Role object
+      let roleObj = selectedUser.role;
+      if (selectedUser.type === 'ADMIN') roleObj = { id: 1, name: 'ADMIN' };
+      else if (selectedUser.type === 'CLIENTE') roleObj = { id: 2, name: 'CLIENTE' };
+      else if (selectedUser.type === 'CONDUCTOR') roleObj = { id: 3, name: 'CONDUCTOR' };
 
-  // Handle page change
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+      const payload = {
+        ...selectedUser,
+        name: selectedUser.name, // This is the edited first name
+        role: roleObj,
+        // surname, lastname, email, etc are already in selectedUser
+      };
 
-  // Handle page size change
-  const handlePageSizeChange = (size) => {
-    setPageSize(size);
-    setCurrentPage(1);
+      // Remove UI-only fields before sending if strict validation (optional, usually ignored by backend)
+      delete payload.originalName;
+      delete payload.statusStr;
+
+      await UserService.updateUser(payload);
+
+      toast.current?.show({ severity: 'success', summary: 'Éxito', detail: 'Usuario actualizado correctamente' });
+      setShowEditDialog(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el usuario' });
+    }
   };
 
   return (
     <div className="container py-3">
-      {/* Filters Section */}
-      <FilterBar filters={filters} onFilterChange={handleFilterChange} />
+      <Toast ref={toast} />
+
+      {/* Header & Search Section */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card shadow-sm border-0" style={{ backgroundColor: '#f8f9fa' }}>
+            <div className="card-body p-3">
+              <div className="row align-items-center g-3">
+                <div className="col-12 col-md-auto me-auto">
+                  <h5 className="fw-bold mb-0">Lista de Usuarios</h5>
+                </div>
+
+                <div className="col-12 col-md-auto">
+                  <div className="position-relative">
+                    <Icon
+                      path={mdiMagnify}
+                      size={1}
+                      className="position-absolute text-secondary"
+                      style={{
+                        top: '50%',
+                        left: '12px',
+                        transform: 'translateY(-50%)',
+                        zIndex: 10,
+                      }}
+                    />
+                    <InputText
+                      value={searchTerm}
+                      onChange={handleSearchChange}
+                      placeholder="Buscar usuario..."
+                      className="w-100"
+                      style={{
+                        borderRadius: '12px',
+                        paddingLeft: '40px',
+                        minWidth: '250px',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Users List Section */}
       <div className="mb-3">
-        <h5 className="fw-bold mb-3">Lista de Usuarios</h5>
-        <DataTable data={paginatedUsers} onEdit={handleEdit} onToggleStatus={handleToggleStatus} />
-      </div>
-
-      {/* Pagination Section */}
-      <div className="mt-4">
-        <Pagination currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
+        <DataTable data={filteredUsers} onEdit={handleEdit} onToggleStatus={handleToggleStatus} />
       </div>
 
       {/* Edit User Dialog - Responsive without scrollbar */}
@@ -112,52 +191,70 @@ export default function Users() {
         header="Editar Usuario"
         visible={showEditDialog}
         onHide={() => setShowEditDialog(false)}
-        style={{ width: '95vw', maxWidth: '500px' }}
-        breakpoints={{ '576px': '95vw' }}
+        style={{ width: '95vw', maxWidth: '700px' }}
+        breakpoints={{ '768px': '95vw' }}
         draggable={false}
         resizable={false}
         modal
         className="border-0 shadow"
         headerClassName="border-0 pb-0 fw-bold"
-        contentClassName="pt-4 overflow-visible"
-        contentStyle={{ overflow: 'visible' }}
+        contentClassName="pt-4"
+        contentStyle={{ overflowY: 'auto', maxHeight: '70vh' }}
       >
         {selectedUser && (
           <div className="d-flex flex-column gap-3">
-            <div>
-              <label className="form-label small fw-semibold text-secondary">Nombre</label>
-              <InputText id="editName" value={selectedUser.name} onChange={(e) => setSelectedUser((prev) => ({ ...prev, name: e.target.value }))} className="w-100" />
-            </div>
+            <div className="row g-3">
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-semibold text-secondary">Nombre</label>
+                <InputText id="editName" value={selectedUser.name} onChange={(e) => setSelectedUser((prev) => ({ ...prev, name: e.target.value }))} className="w-100" />
+              </div>
 
-            <div>
-              <label className="form-label small fw-semibold text-secondary">Correo</label>
-              <InputText id="editEmail" value={selectedUser.email} onChange={(e) => setSelectedUser((prev) => ({ ...prev, email: e.target.value }))} className="w-100" />
-            </div>
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-semibold text-secondary">Apellido Paterno</label>
+                <InputText id="editSurname" value={selectedUser.surname} onChange={(e) => setSelectedUser((prev) => ({ ...prev, surname: e.target.value }))} className="w-100" />
+              </div>
 
-            <div>
-              <label className="form-label small fw-semibold text-secondary">Tipo</label>
-              <Dropdown
-                value={selectedUser.type}
-                options={[
-                  { label: 'Cliente', value: 'Cliente' },
-                  { label: 'Conductor', value: 'Conductor' },
-                ]}
-                onChange={(e) => setSelectedUser((prev) => ({ ...prev, type: e.value }))}
-                className="w-100"
-              />
-            </div>
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-semibold text-secondary">Apellido Materno</label>
+                <InputText id="editLastname" value={selectedUser.lastname || ''} onChange={(e) => setSelectedUser((prev) => ({ ...prev, lastname: e.target.value }))} className="w-100" />
+              </div>
+              
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-semibold text-secondary">Teléfono</label>
+                <InputText id="editPhone" value={selectedUser.phoneNumber} onChange={(e) => setSelectedUser((prev) => ({ ...prev, phoneNumber: e.target.value }))} className="w-100" />
+              </div>
 
-            <div>
-              <label className="form-label small fw-semibold text-secondary">Estado</label>
-              <Dropdown
-                value={selectedUser.status}
-                options={[
-                  { label: 'Activo', value: 'Activo' },
-                  { label: 'Inactivo', value: 'Inactivo' },
-                ]}
-                onChange={(e) => setSelectedUser((prev) => ({ ...prev, status: e.value }))}
-                className="w-100"
-              />
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-semibold text-secondary">Correo</label>
+                <InputText id="editEmail" value={selectedUser.email} onChange={(e) => setSelectedUser((prev) => ({ ...prev, email: e.target.value }))} className="w-100" />
+              </div>
+
+              <div className="col-12 col-md-6">
+                <label className="form-label small fw-semibold text-secondary">Tipo</label>
+                <Dropdown
+                  value={selectedUser.type}
+                  options={[
+                    { label: 'Cliente', value: 'CLIENTE' },
+                    { label: 'Conductor', value: 'CONDUCTOR' },
+                    { label: 'Administrador', value: 'ADMIN' },
+                  ]}
+                  onChange={(e) => setSelectedUser((prev) => ({ ...prev, type: e.value }))}
+                  className="w-100"
+                />
+              </div>
+
+              <div className="col-12">
+                <label className="form-label small fw-semibold text-secondary">Estado</label>
+                <Dropdown
+                  value={selectedUser.status}
+                  options={[
+                    { label: 'Activo', value: true },
+                    { label: 'Inactivo', value: false },
+                  ]}
+                  onChange={(e) => setSelectedUser((prev) => ({ ...prev, status: e.value }))}
+                  className="w-100"
+                />
+              </div>
             </div>
 
             {/* Responsive footer buttons */}

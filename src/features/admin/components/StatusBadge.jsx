@@ -2,7 +2,9 @@ import React from 'react';
 
 // Badge component to display user status
 export default function StatusBadge({ status, className = '' }) {
-  const isActive = status === 'Activo';
+  // Handle both string 'Activo'/'Inactivo' and boolean true/false
+  const isActive = status === 'Activo' || status === true;
+  const displayText = isActive ? 'Activo' : 'Inactivo';
 
   const badgeStyle = {
     backgroundColor: isActive ? 'var(--color-lime-tint-1)' : 'var(--color-red-tint-1)',
@@ -18,7 +20,7 @@ export default function StatusBadge({ status, className = '' }) {
 
   return (
     <span style={badgeStyle} className={className}>
-      {status}
+      {displayText}
     </span>
   );
 }
