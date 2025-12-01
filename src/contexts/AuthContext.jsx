@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
             maternalSurname: decodedToken.maternalSurname,
             phone: decodedToken.phone,
             status: decodedToken.status,
-            createdAt: decodedToken.createdAt
+            createdAt: decodedToken.createdAt,
           });
           setIsAuthenticated(true);
         } else {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
   };
-  
+
   useEffect(() => {
     setAuthHandlers({
       handleAuthError: (status, message, endpoint, hadAuthToken) => {

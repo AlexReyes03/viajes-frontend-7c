@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
+import { Message } from 'primereact/message';
 import Icon from '@mdi/react';
 import { mdiRefresh, mdiDotsHorizontal, mdiAccountOutline, mdiCrosshairsGps, mdiCash, mdiMagnify, mdiFilterOff, mdiCalendar } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
@@ -15,44 +16,7 @@ export default function TripHistory() {
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const trips = [
-    {
-      id: 1,
-      address: 'Casa en Privada Valle de San Luis...',
-      date: '24 oct - 1:06 pm',
-      price: '$219.41 MXN',
-      origin: { lat: 18.8568, lng: -98.7993, name: 'Universidad Tecnológica' },
-      destination: { lat: 18.87, lng: -98.81, name: 'Casa en Privada Valle' },
-      isLatest: true,
-    },
-    {
-      id: 2,
-      address: 'Casa en Privada Valle de San Luis...',
-      date: '22 oct - 2:22 pm',
-      price: '$219.41 MXN',
-      origin: { lat: 18.85, lng: -98.79, name: 'Plaza Las Américas' },
-      destination: { lat: 18.865, lng: -98.8, name: 'Casa en Privada Valle' },
-      isLatest: false,
-    },
-    {
-      id: 3,
-      address: 'Casa en Privada Valle de San Luis...',
-      date: '18 oct - 6:33 pm',
-      price: '$219.41 MXN',
-      origin: { lat: 18.86, lng: -98.805, name: 'Centro Comercial' },
-      destination: { lat: 18.87, lng: -98.81, name: 'Casa en Privada Valle' },
-      isLatest: false,
-    },
-    {
-      id: 4,
-      address: 'Casa en Privada Valle de San Luis...',
-      date: '15 oct - 12:44 pm',
-      price: '$219.41 MXN',
-      origin: { lat: 18.845, lng: -98.785, name: 'Hospital Regional' },
-      destination: { lat: 18.87, lng: -98.81, name: 'Casa en Privada Valle' },
-      isLatest: false,
-    },
-  ];
+  const trips = [];
 
   const filteredTrips = useMemo(() => {
     if (!searchTerm) {
@@ -305,7 +269,12 @@ export default function TripHistory() {
           ) : (
             <>
               {/* SECCIÓN: Última actividad */}
-              <h4 className="fw-bold mb-3 text-dark">Última actividad</h4>
+              {filteredTrips.length > 0 && <h4 className="fw-bold mb-3 text-dark">Última actividad</h4>}
+              
+              {filteredTrips.length === 0 && (
+                <Message severity="info" text="Aún no hay actividad registrada." className="w-100" />
+              )}
+
               {filteredTrips
                 .filter((t) => t.isLatest)
                 .map((trip) => (
@@ -313,12 +282,16 @@ export default function TripHistory() {
                 ))}
 
               {/* SECCIÓN: Anteriores */}
-              <h4 className="fw-bold mb-3 text-dark">Anteriores</h4>
-              {filteredTrips
-                .filter((t) => !t.isLatest)
-                .map((trip) => (
-                  <TripCard key={trip.id} address={trip.address} date={trip.date} price={trip.price} origin={trip.origin} destination={trip.destination} onClick={() => handleCardClick(trip)} />
-                ))}
+              {filteredTrips.filter((t) => !t.isLatest).length > 0 && (
+                <>
+                  <h4 className="fw-bold mb-3 text-dark">Anteriores</h4>
+                  {filteredTrips
+                    .filter((t) => !t.isLatest)
+                    .map((trip) => (
+                      <TripCard key={trip.id} address={trip.address} date={trip.date} price={trip.price} origin={trip.origin} destination={trip.destination} onClick={() => handleCardClick(trip)} />
+                    ))}
+                </>
+              )}
             </>
           )}
         </div>

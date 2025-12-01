@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import NotFound from '../components/global/NotFound';
 import UserProfile from '../components/global/UserProfile';
 import Notifications from '../components/global/Notifications';
+import Messages from '../components/global/Messages';
 
 import AuthLayout from '../components/global/AuthLayout';
 import LoginForm from '../features/auth/views/LoginForm';
@@ -61,6 +62,7 @@ const AppRouter = () => {
           <Route path="/p/profile" element={<UserProfile />} />
           <Route path="/p/trips" element={<PassengerTripHistory />} />
           <Route path="/p/alerts" element={<Notifications />} />
+          <Route path="/p/messages" element={<Messages />} />
         </Route>
       </Route>
 
@@ -71,6 +73,7 @@ const AppRouter = () => {
           <Route path="/d/trips" element={<DriverTripHistory />} />
           <Route path="/d/profile" element={<UserProfile />} />
           <Route path="/d/alerts" element={<Notifications />} />
+          <Route path="/d/messages" element={<Messages />} />
         </Route>
       </Route>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 import Icon from '@mdi/react';
 import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiHomeOutline, mdiStar } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
@@ -8,9 +9,9 @@ import TripStatusCard from '../components/TripStatusCard';
 import TripStatusMobile from '../components/TripStatusMobile';
 import MapView from '../../../components/global/MapView';
 
-const ToolButton = ({ icon, label }) => (
+const ToolButton = ({ icon, label, onClick }) => (
   <div className="col-4 mb-2">
-    <button type="button" className="d-flex flex-column align-items-center justify-content-start p-0 border-0 shadow-none w-100 h-100 hoverable" style={{ background: 'transparent' }}>
+    <button type="button" onClick={onClick} className="d-flex flex-column align-items-center justify-content-start p-0 border-0 shadow-none w-100 h-100 hoverable" style={{ background: 'transparent' }}>
       <div
         className="d-flex align-items-center justify-content-center mb-1"
         style={{
@@ -50,6 +51,8 @@ const ActivityItem = ({ icon, address, rating }) => (
 const DEFAULT_CENTER = [18.8568, -98.7993];
 
 export default function LandingPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [showTripCard, setShowTripCard] = useState(true);
   const location = useLocation();
 
@@ -319,12 +322,12 @@ export default function LandingPage() {
             <div className="card-body p-3">
               <h4 className="fw-bold mb-3">Herramientas</h4>
               <div className="row g-2">
-                <ToolButton icon={mdiAccountQuestion} label="Ayuda" />
-                <ToolButton icon={mdiWallet} label="Billetera" />
-                <ToolButton icon={mdiBell} label="Notificaciones" />
-                <ToolButton icon={mdiFlash} label="App Plus" />
-                <ToolButton icon={mdiHistory} label="Mis viajes" />
-                <ToolButton icon={mdiMessageText} label="Mensajes" />
+                <ToolButton icon={mdiAccountQuestion} label="Ayuda" onClick={() => {}} />
+                <ToolButton icon={mdiWallet} label="Billetera" onClick={() => navigate('/p/profile')} />
+                <ToolButton icon={mdiBell} label="Notificaciones" onClick={() => navigate('/p/alerts')} />
+                <ToolButton icon={mdiFlash} label="Promociones" onClick={() => {}} />
+                <ToolButton icon={mdiHistory} label="Mis viajes" onClick={() => navigate('/p/trips')} />
+                <ToolButton icon={mdiMessageText} label="Mensajes" onClick={() => navigate('/p/messages')} />
               </div>
             </div>
           </div>
@@ -337,9 +340,7 @@ export default function LandingPage() {
               <h4 className="fw-bold mb-3">Actividad reciente</h4>
 
               <div className="d-flex flex-column">
-                <ActivityItem icon={mdiHomeOutline} address="Casa en Privada Valle de San..." rating="5.0" />
-                <ActivityItem icon={mdiHistory} address="Tractor Verde, 53, Colonia Azt..." rating="4.5" />
-                <ActivityItem icon={mdiHistory} address="Av. Universidad Tecnológica, Emiliano Zapata" rating="4.5" />
+                <p className="text-muted small mb-0 text-center">No hay actividad reciente.</p>
               </div>
             </div>
           </div>
@@ -352,14 +353,14 @@ export default function LandingPage() {
               <h4 className="fw-bold w-100 text-start mb-3">Mi calificación</h4>
 
               <div className="d-flex align-items-center gap-2 mb-2">
-                <Avatar image="https://primefaces.org/cdn/primereact/images/avatar/xuxuefeng.png" size="large" shape="circle" className="p-overlay-badge" style={{ width: '50px', height: '50px' }} />
-                <span className="fs-4 fw-normal">Alejandro Reyes</span>
+                <Avatar image={user?.avatar || user?.avatarUrl || "https://primefaces.org/cdn/primereact/images/avatar/xuxuefeng.png"} size="large" shape="circle" className="p-overlay-badge flex-shrink-0" style={{ width: '50px', height: '50px' }} />
+                <span className="fs-4 fw-normal">{user?.name} {user?.paternalSurname} {user?.maternalSurname}</span>
               </div>
 
               <div className="d-flex align-items-center gap-2 mb-2">
                 <Icon path={mdiStar} size={2.5} style={{ color: 'var(--color-teal-tint-1)' }} />
                 <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
-                  4.5
+                  {user?.rating || '5.0'}
                 </span>
               </div>
 

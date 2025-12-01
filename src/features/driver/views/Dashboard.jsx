@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 import Icon from '@mdi/react';
 import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiAccount, mdiStar } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
@@ -52,28 +53,17 @@ const RatingItem = ({ passengerName, rating }) => (
 export default function Dashboard() {
   const [showTripCard, setShowTripCard] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Driver's current location (mock data)
   const driverLocation = [18.8568, -98.7993]; // Universidad Tecnológica de Emiliano Zapata
-
-  // Mock data - Ready to replace with API calls
-  const driverProfile = {
-    name: 'Ignacio Sánchez',
-    role: 'Conductor',
-    rating: 4.5,
-    avatar: 'https://primefaces.org/cdn/primereact/images/avatar/xuxuefeng.png',
-  };
 
   const recentRatings = [
     { id: 1, passengerName: 'Juan Iturbide Ramírez', rating: 5.0 },
     { id: 2, passengerName: 'María López Chavez', rating: 4.5 },
     { id: 3, passengerName: 'Frida Michelle Castro', rating: 4.5 },
   ];
-
-  // Handler functions for tool buttons
-  const handleToolClick = (toolName) => {
-    console.log(`Clicked on: ${toolName}`);
-  };
 
   return (
     <div className="w-100 container pb-3">
@@ -117,12 +107,12 @@ export default function Dashboard() {
             <div className="card-body p-3">
               <h4 className="fw-bold mb-3">Herramientas</h4>
               <div className="row g-2">
-                <ToolButton icon={mdiAccountQuestion} label="Ayuda" onClick={() => handleToolClick('help')} />
-                <ToolButton icon={mdiWallet} label="Billetera" onClick={() => handleToolClick('wallet')} />
-                <ToolButton icon={mdiBell} label="Notificaciones" onClick={() => handleToolClick('notifications')} />
-                <ToolButton icon={mdiFlash} label="App Plus" onClick={() => handleToolClick('appPlus')} />
-                <ToolButton icon={mdiHistory} label="Mis viajes" onClick={() => handleToolClick('trips')} />
-                <ToolButton icon={mdiMessageText} label="Mensajes" onClick={() => handleToolClick('messages')} />
+                <ToolButton icon={mdiAccountQuestion} label="Ayuda" onClick={() => {}} />
+                <ToolButton icon={mdiWallet} label="Billetera" onClick={() => navigate('/d/profile')} />
+                <ToolButton icon={mdiBell} label="Notificaciones" onClick={() => navigate('/d/alerts')} />
+                <ToolButton icon={mdiFlash} label="Promociones" onClick={() => {}} />
+                <ToolButton icon={mdiHistory} label="Mis viajes" onClick={() => navigate('/d/trips')} />
+                <ToolButton icon={mdiMessageText} label="Mensajes" onClick={() => navigate('/d/messages')} />
               </div>
             </div>
           </div>
@@ -154,16 +144,16 @@ export default function Dashboard() {
               <h4 className="fw-bold w-100 text-start mb-3">Mi calificación</h4>
 
               <div className="d-flex align-items-center gap-2 mb-2">
-                <Avatar image={driverProfile.avatar} size="large" shape="circle" className="p-overlay-badge" style={{ width: '50px', height: '50px' }} />
-                <span className="fs-4 fw-normal">{driverProfile.name}</span>
+                <Avatar image={user?.avatar || user?.avatarUrl || "https://primefaces.org/cdn/primereact/images/avatar/xuxuefeng.png"} size="large" shape="circle" className="p-overlay-badge flex-shrink-0" style={{ width: '50px', height: '50px' }} />
+                <span className="fs-4 fw-normal">{user?.name} {user?.paternalSurname} {user?.maternalSurname}</span>
               </div>
 
-              <span className="text-muted small mb-3">{driverProfile.role}</span>
+              <span className="text-muted small mb-3">Conductor</span>
 
               <div className="d-flex align-items-center gap-2 mb-2">
                 <Icon path={mdiStar} size={2.5} style={{ color: 'var(--color-teal-tint-1)' }} />
                 <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
-                  {driverProfile.rating.toFixed(1)}
+                  {user?.rating || '5.0'}
                 </span>
               </div>
 
