@@ -86,7 +86,7 @@ export default function TripStatusMobile({
                 <Icon path={mdiCash} size={1} className="text-dark" />
                 <div className="d-flex flex-column lh-1">
                     <span className="small fw-bold">Efectivo</span>
-                    <span className="fs-5 fw-normal">${(tripData?.fare || tariff?.tariffValue || 0).toFixed(2)} MXN</span>
+                    <span className="fs-5 fw-normal">${(tariff?.tariffValue || 0).toFixed(2)} MXN</span>
                 </div>
             </div>
         </div>
@@ -221,7 +221,7 @@ export default function TripStatusMobile({
                     <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-3 mb-3">
                         <Icon path={mdiCash} size={2} className="text-success" />
                     </div>
-                    <h3 className="fw-bold text-success mb-0">${(tripData?.fare || tariff?.tariffValue || 0).toFixed(2)}</h3>
+                    <h3 className="fw-bold text-success mb-0">${(tariff?.tariffValue || 0).toFixed(2)}</h3>
                     <p className="text-muted small">Viaje completado exitosamente</p>
                 </div>
 

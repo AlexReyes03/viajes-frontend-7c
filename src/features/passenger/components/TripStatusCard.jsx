@@ -90,7 +90,7 @@ export default function TripStatusCard({
         <Icon path={mdiCash} size={1} className="text-dark" />
         <div className="d-flex flex-column lh-1">
           <span className="small fw-bold">Efectivo</span>
-          <span className="fw-normal">${(tripData?.fare || tariff?.tariffValue || 0).toFixed(2)} MXN</span>
+          <span className="fw-normal">${(tariff?.tariffValue || 0).toFixed(2)} MXN</span>
         </div>
       </div>
     </div>

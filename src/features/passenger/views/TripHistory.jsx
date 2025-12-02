@@ -14,6 +14,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import * as TripService from '../../../api/trip/trip.service';
 import * as RatingService from '../../../api/rating/rating.service';
+import useTariff from '../../../hooks/useTariff';
 
 const TripCard = ({ address, date, price, origin, destination, onClick }) => (
   <div className="card border shadow-sm mb-3 hoverable" style={{ borderRadius: '12px' }} onClick={onClick}>
@@ -53,9 +54,10 @@ const TripCard = ({ address, date, price, origin, destination, onClick }) => (
 
 export default function TripHistory() {
   const { user } = useAuth();
+  const { tariff } = useTariff();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,15 +91,15 @@ export default function TripHistory() {
                         const timeStr = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
                         return `${dateStr} - ${timeStr}`;
                     })(),
-                    price: `$${(t.fare || 0).toFixed(2)} MXN`,
-                    origin: { 
-                        name: t.originAddress || t.origin || 'Origen desconocido', 
-                        lat: originLat, 
-                        lng: originLng 
+                    price: `$${(tariff?.tariffValue || 0).toFixed(2)} MXN`,
+                    origin: {
+                        name: t.originAddress || t.origin || 'Origen desconocido',
+                        lat: originLat,
+                        lng: originLng
                     },
-                    destination: { 
-                        name: t.destinationAddress || t.destination || 'Destino desconocido', 
-                        lat: destLat, 
+                    destination: {
+                        name: t.destinationAddress || t.destination || 'Destino desconocido',
+                        lat: destLat,
                         lng: destLng
                     },
                     driver: {
@@ -128,7 +130,7 @@ export default function TripHistory() {
     };
 
     fetchHistory();
-  }, [user]);
+  }, [user, tariff]);
 
   // Handle auto-open from LandingPage
   useEffect(() => {
