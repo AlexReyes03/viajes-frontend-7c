@@ -78,7 +78,8 @@ export default function UserProfile() {
         // Assuming updateUser in backend handles partial updates or full object
         const payload = {
           id: user.id,
-          ...formData
+          ...formData,
+          status: user.status === true || user.status === 'true'
         };
 
         const response = await UserService.updateUser(payload);

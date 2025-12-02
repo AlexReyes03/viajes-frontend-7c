@@ -6,6 +6,7 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { Rating } from 'primereact/rating';
 import Icon from '@mdi/react';
 import { mdiCrosshairsGps, mdiArrowRight, mdiHome, mdiCash, mdiStar } from '@mdi/js';
+import useTariff from '../../../hooks/useTariff';
 
 export default function TripStatusCard({ 
   tripState = 'request', // request, searching, pickup, ongoing, dropoff, finished
@@ -24,6 +25,7 @@ export default function TripStatusCard({
   onRate
 }) {
   const [loadingAction, setLoadingAction] = React.useState(null);
+  const { tariff } = useTariff();
 
   React.useEffect(() => {
       setLoadingAction(null);
@@ -88,7 +90,7 @@ export default function TripStatusCard({
         <Icon path={mdiCash} size={1} className="text-dark" />
         <div className="d-flex flex-column lh-1">
           <span className="small fw-bold">Efectivo</span>
-          <span className="fw-normal">${tripData?.fare?.toFixed(2) || '50.00'} MXN</span>
+          <span className="fw-normal">${(tripData?.fare || tariff?.tariffValue || 0).toFixed(2)} MXN</span>
         </div>
       </div>
     </div>
@@ -129,7 +131,7 @@ export default function TripStatusCard({
       {/* Tarifa Fija Info */}
       <div className="d-flex align-items-center justify-content-between mb-3 px-1">
         <span className="small text-muted fw-bold">Tarifa del viaje (Fija):</span>
-        <span className="fs-5 fw-bold text-success">$50.00 MXN</span>
+        <span className="fs-5 fw-bold text-success">${(tariff?.tariffValue || 0).toFixed(2)} MXN</span>
       </div>
 
       <Button 

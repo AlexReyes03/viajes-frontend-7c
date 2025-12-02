@@ -430,7 +430,7 @@ export default function Dashboard() {
               <div className="d-flex align-items-center gap-2 mb-2">
                 <Avatar image={user.avatar} icon={!user.avatar ? 'pi pi-user' : null} shape="circle" className="bg-warning text-white" style={{ width: '50px', height: '50px', flexShrink: 0 }} />
                 <span className="fs-4 fw-normal">
-                  {user?.name} {user?.paternalSurname} {user?.maternalSurname || '?'}
+                  {user?.name} {user?.paternalSurname} {user?.maternalSurname || ''}
                 </span>
               </div>
 
@@ -443,8 +443,8 @@ export default function Dashboard() {
                     {driverRating}
                   </span>
                 ) : (
-                  <span className="fw-bold text-muted" style={{ fontSize: '1.5rem' }}>
-                    Sin calificaciones
+                  <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
+                    5.0
                   </span>
                 )}
               </div>

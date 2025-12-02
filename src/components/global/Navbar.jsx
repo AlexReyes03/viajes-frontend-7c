@@ -27,7 +27,6 @@ export default function Navbar({ variant = 'login', user = {} }) {
       return [
         { label: 'Estadísticas', to: '/a/home', icon: 'pi pi-chart-bar' },
         { label: 'Usuarios', to: '/a/users', icon: 'pi pi-users' },
-        { label: 'Tarifas', to: '/a/tariffs', icon: 'pi pi-money-bill' },
         { label: 'Perfil', to: '/a/profile', icon: 'pi pi-user' },
       ];
     }

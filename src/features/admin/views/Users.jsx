@@ -6,7 +6,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import Icon from '@mdi/react';
-import { mdiMagnify } from '@mdi/js';
+import { mdiMagnify, mdiCardAccountDetails, mdiCar } from '@mdi/js';
 import DataTable from '../components/DataTable';
 import { UserService } from '../../../api/user/user.service';
 import { DriverService } from '../../../api/driver/driver.service';
@@ -133,9 +133,6 @@ export default function Users() {
         const blob = await DriverService.downloadDocument(doc.id);
         const url = window.URL.createObjectURL(blob);
         window.open(url, '_blank');
-        
-        // Optional: Clean up URL after some time if needed, but for _blank it's tricky.
-        // Usually browser handles it or we let GC handle it eventually on reload.
       } else {
         toast.current?.show({ severity: 'warn', summary: 'Sin documento', detail: 'El conductor no tiene documentos registrados.' });
       }
@@ -327,14 +324,6 @@ export default function Users() {
       >
         {selectedUser && (
           <div className="d-flex flex-column gap-3">
-            {/* Step Indicators for Conductor */}
-            {selectedUser.type === 'CONDUCTOR' && (
-               <div className="d-flex justify-content-center gap-2 mb-3">
-                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: currentStep === 1 ? 'var(--color-lime-shade-2)' : '#dee2e6', transition: 'background-color 0.3s' }} />
-                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: currentStep === 2 ? 'var(--color-lime-shade-2)' : '#dee2e6', transition: 'background-color 0.3s' }} />
-               </div>
-            )}
-
             {currentStep === 1 && (
             <div className="row g-3">
               <div className="col-12 col-md-6">
@@ -428,25 +417,42 @@ export default function Users() {
               </div>
             )}
 
-            {/* Responsive footer buttons */}
-            <div className="d-flex flex-column flex-sm-row justify-content-between gap-2 pt-3 border-top mt-2">
-              {currentStep === 2 ? (
-                 <Button label="Atrás" className="p-button-outlined p-button-secondary w-100 w-sm-auto order-2" onClick={() => setCurrentStep(1)} />
-              ) : (
-                 <div className="w-100 w-sm-auto order-2"></div> // Spacer
-              )}
+            {/* Step Indicators for Conductor (Moved to Bottom) */}
+            {selectedUser.type === 'CONDUCTOR' && (
+               <div className="d-flex justify-content-center gap-2 mt-3">
+                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: currentStep === 1 ? 'var(--color-lime-shade-2)' : '#dee2e6', transition: 'background-color 0.3s' }} />
+                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: currentStep === 2 ? 'var(--color-lime-shade-2)' : '#dee2e6', transition: 'background-color 0.3s' }} />
+               </div>
+            )}
 
-              <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto order-1">
+            {/* Responsive footer buttons */}
+            <div className="d-flex align-items-center justify-content-between pt-4 mt-2 border-top">
+              {/* Left Side: Back Button (Only Step 2) */}
+              <div>
+                {currentStep === 2 && (
+                  <Button 
+                    icon="pi pi-arrow-left" 
+                    className="p-button-text p-button-secondary p-button-sm" 
+                    tooltip="Atrás"
+                    tooltipOptions={{ position: 'top' }}
+                    onClick={() => setCurrentStep(1)} 
+                  />
+                )}
+              </div>
+
+              {/* Right Side: Action Buttons */}
+              <div className="d-flex gap-2">
                 <Button
                   label="Cancelar"
-                  className="p-button-outlined fw-bold w-100 w-sm-auto"
+                  className="p-button-outlined fw-bold"
                   style={{ color: 'var(--color-secondary)', borderColor: 'var(--color-secondary)' }}
                   onClick={() => setShowEditDialog(false)}
                 />
+                
                 {selectedUser.type === 'CONDUCTOR' && currentStep === 1 ? (
-                  <Button label="Siguiente" className="btn-lime w-100 w-sm-auto" onClick={() => setCurrentStep(2)} />
+                  <Button label="Siguiente" className="btn-lime" onClick={() => setCurrentStep(2)} />
                 ) : (
-                  <Button label="Guardar" className="btn-lime w-100 w-sm-auto" onClick={handleSaveUser} />
+                  <Button label="Guardar" className="btn-lime" onClick={handleSaveUser} />
                 )}
               </div>
             </div>
@@ -469,41 +475,61 @@ export default function Users() {
         contentClassName="pt-4"
       >
          {selectedUser && (
-           <div className="d-flex flex-column gap-3">
-             <div className="mb-3">
-               <label className="fw-bold d-block text-secondary">Licencia</label>
-               <span className="fs-5">{selectedUser.licenseNumber}</span>
-             </div>
-             
-             <h6 className="fw-bold text-secondary border-bottom pb-2">Vehículo</h6>
-             
-             <div className="row g-3">
-               <div className="col-6">
-                 <label className="small text-secondary">Marca</label>
-                 <div className="fw-semibold">{selectedUser.vehicleBrand}</div>
+             <div className="d-flex flex-column gap-4">
+               {/* License Section */}
+               <div className="bg-light p-3 rounded-3 d-flex align-items-center gap-3 border">
+                  <div className="bg-white p-2 rounded-circle shadow-sm">
+                    <Icon path={mdiCardAccountDetails} size={1.2} className="text-secondary" />
+                  </div>
+                  <div>
+                    <label className="small text-secondary fw-bold d-block text-uppercase" style={{fontSize: '0.7rem', letterSpacing: '0.5px'}}>Licencia de Conducir</label>
+                    <span className="fs-5 fw-bold text-dark">{selectedUser.licenseNumber || 'N/A'}</span>
+                  </div>
                </div>
-               <div className="col-6">
-                 <label className="small text-secondary">Modelo</label>
-                 <div className="fw-semibold">{selectedUser.vehicleModel}</div>
-               </div>
-               <div className="col-4">
-                 <label className="small text-secondary">Año</label>
-                 <div className="fw-semibold">{selectedUser.vehicleYear}</div>
-               </div>
-               <div className="col-4">
-                 <label className="small text-secondary">Placa</label>
-                 <div className="fw-semibold">{selectedUser.vehiclePlate}</div>
-               </div>
-               <div className="col-4">
-                 <label className="small text-secondary">Color</label>
-                 <div className="fw-semibold">{selectedUser.vehicleColor}</div>
-               </div>
-             </div>
 
-             <div className="d-flex justify-content-end pt-3">
-               <Button label="Cerrar" className="p-button-secondary" onClick={() => setShowVehicleDialog(false)} />
+               {/* Vehicle Section */}
+               <div>
+                 <h6 className="fw-bold text-secondary mb-3 d-flex align-items-center gap-2">
+                    <Icon path={mdiCar} size={0.8} /> Detalles del Vehículo
+                 </h6>
+                 
+                 <div className="card border-0 shadow-sm" style={{backgroundColor: '#f8f9fa'}}>
+                    <div className="card-body">
+                        <div className="row g-3">
+                            <div className="col-6">
+                                <label className="small text-secondary d-block">Marca</label>
+                                <span className="fw-semibold text-dark">{selectedUser.vehicleBrand}</span>
+                            </div>
+                            <div className="col-6">
+                                <label className="small text-secondary d-block">Modelo</label>
+                                <span className="fw-semibold text-dark">{selectedUser.vehicleModel}</span>
+                            </div>
+                            <div className="col-6">
+                                <label className="small text-secondary d-block">Color</label>
+                                <div className="d-flex align-items-center gap-2">
+                                    <div style={{width: '12px', height: '12px', borderRadius: '50%', backgroundColor: selectedUser.vehicleColor?.toLowerCase() === 'blanco' ? '#eee' : selectedUser.vehicleColor, border: '1px solid #ddd'}}></div>
+                                    <span className="fw-semibold text-dark">{selectedUser.vehicleColor}</span>
+                                </div>
+                            </div>
+                            <div className="col-6">
+                                <label className="small text-secondary d-block">Año</label>
+                                <span className="fw-semibold text-dark">{selectedUser.vehicleYear}</span>
+                            </div>
+                            <div className="col-12 pt-2">
+                                <div className="d-flex flex-column align-items-center justify-content-center p-2 bg-white border rounded">
+                                    <label className="small text-secondary text-uppercase fw-bold" style={{fontSize: '0.65rem'}}>Placa</label>
+                                    <span className="fs-4 fw-bold" style={{letterSpacing: '2px', color: '#333'}}>{selectedUser.vehiclePlate}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+               </div>
+
+               <div className="d-flex justify-content-end pt-2">
+                 <Button label="Cerrar" className="p-button-secondary" onClick={() => setShowVehicleDialog(false)} />
+               </div>
              </div>
-           </div>
          )}
       </Dialog>
     </div>

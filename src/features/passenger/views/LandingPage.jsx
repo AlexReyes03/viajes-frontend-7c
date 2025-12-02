@@ -632,7 +632,7 @@ export default function LandingPage() {
               <div className="d-flex align-items-center gap-2 mb-2">
                 <Avatar image={user.avatar} icon={!user.avatar ? 'pi pi-user' : null} shape="circle" className="bg-warning text-white" style={{ width: '50px', height: '50px', flexShrink: 0 }} />
                 <span className="fs-4 fw-normal">
-                  {user?.name} {user?.paternalSurname} {user?.maternalSurname || '?'}
+                  {user?.name} {user?.paternalSurname} {user?.maternalSurname || ''}
                 </span>
               </div>
               <div className="d-flex align-items-center gap-2 mb-2">

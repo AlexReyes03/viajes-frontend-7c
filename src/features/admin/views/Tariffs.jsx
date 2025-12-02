@@ -1,3 +1,10 @@
+/*
+ * ARCHIVO DESACTIVADO - Ya no se usa gestión de múltiples tarifas
+ * Ahora se maneja una tarifa única desde Statistics.jsx con TariffConfigCard
+ * Conservado para referencia histórica
+ * Fecha de desactivación: 2025-12-02
+ */
+
 import React, { useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
@@ -174,3 +181,7 @@ export default function Tariffs() {
     </div>
   );
 }
+
+/*
+ * FIN DEL ARCHIVO DESACTIVADO
+ */

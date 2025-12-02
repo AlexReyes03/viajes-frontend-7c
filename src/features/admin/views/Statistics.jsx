@@ -4,6 +4,7 @@ import Icon from '@mdi/react';
 import { mdiAccountGroup, mdiCarConnected, mdiCheckCircleOutline, mdiCurrencyUsd } from '@mdi/js';
 import StatCard from '../components/StatCard';
 import AdminPieChart from '../components/AdminPieChart';
+import TariffConfigCard from '../components/TariffConfigCard';
 import useAdminStats from '../../../hooks/useAdminStats';
 
 // Admin statistics dashboard view with real API connection
@@ -63,9 +64,12 @@ export default function Statistics() {
         </div>
       </div>
 
-      {/* Pie Chart Section */}
+      {/* Tariff and Pie Chart Section */}
       <div className="row mb-4">
-        <div className="col-12 col-lg-6 offset-lg-3">
+        <div className="col-12 col-lg-6">
+          <TariffConfigCard />
+        </div>
+        <div className="col-12 col-lg-6">
           <AdminPieChart
             data={chartData}
             height={380}
@@ -82,7 +86,7 @@ export default function Statistics() {
         <div className="col-12 col-md-4">
           <div className="card shadow-sm h-100">
             <div className="card-body p-3">
-              <h6 className="text-muted small mb-2">Desglose de Usuarios</h6>
+              <h6 className="fw-bold small mb-2">Desglose de Usuarios</h6>
               <div className="d-flex justify-content-between mb-2">
                 <span>Clientes</span>
                 <strong>{(stats?.totalClients || 0).toLocaleString('es-MX')}</strong>
@@ -93,7 +97,7 @@ export default function Statistics() {
               </div>
               <div className="d-flex justify-content-between">
                 <span>Conductores Pendientes</span>
-                <strong className="text-warning">{(stats?.pendingDrivers || 0).toLocaleString('es-MX')}</strong>
+                <strong>{(stats?.pendingDrivers || 0).toLocaleString('es-MX')}</strong>
               </div>
             </div>
           </div>
@@ -102,18 +106,18 @@ export default function Statistics() {
         <div className="col-12 col-md-4">
           <div className="card shadow-sm h-100">
             <div className="card-body p-3">
-              <h6 className="text-muted small mb-2">Estado de Viajes</h6>
+              <h6 className="fw-bold small mb-2">Estado de Viajes</h6>
               <div className="d-flex justify-content-between mb-2">
                 <span>Total Viajes</span>
                 <strong>{(stats?.totalTrips || 0).toLocaleString('es-MX')}</strong>
               </div>
               <div className="d-flex justify-content-between mb-2">
                 <span>Activos</span>
-                <strong className="text-primary">{(stats?.activeTrips || 0).toLocaleString('es-MX')}</strong>
+                <strong>{(stats?.activeTrips || 0).toLocaleString('es-MX')}</strong>
               </div>
               <div className="d-flex justify-content-between">
                 <span>Cancelados</span>
-                <strong className="text-danger">{(stats?.cancelledTrips || 0).toLocaleString('es-MX')}</strong>
+                <strong>{(stats?.cancelledTrips || 0).toLocaleString('es-MX')}</strong>
               </div>
             </div>
           </div>
@@ -122,7 +126,7 @@ export default function Statistics() {
         <div className="col-12 col-md-4">
           <div className="card shadow-sm h-100">
             <div className="card-body p-3">
-              <h6 className="text-muted small mb-2">Métricas de Rendimiento</h6>
+              <h6 className="fw-bold small mb-2">Métricas de Rendimiento</h6>
               <div className="d-flex justify-content-between mb-2">
                 <span>Tasa de Completado</span>
                 <strong>

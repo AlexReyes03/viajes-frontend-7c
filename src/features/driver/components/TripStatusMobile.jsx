@@ -5,6 +5,7 @@ import { Avatar } from 'primereact/avatar';
 import { Rating } from 'primereact/rating';
 import Icon from '@mdi/react';
 import { mdiCrosshairsGps, mdiHome, mdiCash, mdiStar } from '@mdi/js';
+import useTariff from '../../../hooks/useTariff';
 
 export default function TripStatusMobile({ 
     tripState = 'request',
@@ -20,6 +21,7 @@ export default function TripStatusMobile({
     onRate
 }) {
     const [loadingAction, setLoadingAction] = React.useState(null);
+    const { tariff } = useTariff();
 
     React.useEffect(() => {
         setLoadingAction(null);
@@ -84,7 +86,7 @@ export default function TripStatusMobile({
                 <Icon path={mdiCash} size={1} className="text-dark" />
                 <div className="d-flex flex-column lh-1">
                     <span className="small fw-bold">Efectivo</span>
-                    <span className="fs-5 fw-normal">${tripData?.fare?.toFixed(2) || '0.00'} MXN</span>
+                    <span className="fs-5 fw-normal">${(tripData?.fare || tariff?.tariffValue || 0).toFixed(2)} MXN</span>
                 </div>
             </div>
         </div>
@@ -219,7 +221,7 @@ export default function TripStatusMobile({
                     <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-3 mb-3">
                         <Icon path={mdiCash} size={2} className="text-success" />
                     </div>
-                    <h3 className="fw-bold text-success mb-0">${tripData?.fare?.toFixed(2) || '0.00'}</h3>
+                    <h3 className="fw-bold text-success mb-0">${(tripData?.fare || tariff?.tariffValue || 0).toFixed(2)}</h3>
                     <p className="text-muted small">Viaje completado exitosamente</p>
                 </div>
 

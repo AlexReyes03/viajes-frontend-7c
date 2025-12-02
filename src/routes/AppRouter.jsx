@@ -25,7 +25,6 @@ import DriverTripHistory from '../features/driver/views/TripHistory';
 // Admin views
 import AdminStatistics from '../features/admin/views/Statistics';
 import AdminUsers from '../features/admin/views/Users';
-import AdminTariffs from '../features/admin/views/Tariffs';
 
 const RoleRedirect = () => {
   const { user } = useAuth();
@@ -82,7 +81,6 @@ const AppRouter = () => {
         <Route element={<AppLayout />}>
           <Route path="/a/home" element={<AdminStatistics />} />
           <Route path="/a/users" element={<AdminUsers />} />
-          <Route path="/a/tariffs" element={<AdminTariffs />} />
           <Route path="/a/profile" element={<UserProfile />} />
         </Route>
       </Route>
