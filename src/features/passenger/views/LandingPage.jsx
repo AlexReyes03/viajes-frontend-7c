@@ -35,6 +35,27 @@ const ToolButton = ({ icon, label, onClick }) => (
   </div>
 );
 
+const RecentTripItem = ({ destination, date, onClick }) => (
+  <div 
+      className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2 cursor-pointer w-100"
+      onClick={onClick}
+      style={{ cursor: 'pointer' }}
+  >
+      <div className="d-flex align-items-center gap-3 overflow-hidden">
+          <div className="rounded-circle border d-flex align-items-center justify-content-center flex-shrink-0 bg-white" style={{ width: '35px', height: '35px' }}>
+              <Icon path={mdiHistory} size={0.8} className="text-dark" />
+          </div>
+          <div className="d-flex flex-column overflow-hidden w-100">
+              <p className="mb-0 text-truncate w-100">{destination}</p>
+              <small className="text-muted">{date}</small>
+          </div>
+      </div>
+      <div className="flex-shrink-0 ms-2">
+           <i className="pi pi-chevron-right text-secondary" style={{ fontSize: '0.9rem' }}></i>
+      </div>
+  </div>
+);
+
 const DEFAULT_CENTER = [18.8568, -98.7993]; // Emiliano Zapata
 
 export default function LandingPage() {
@@ -119,7 +140,11 @@ export default function LandingPage() {
               if (historyResponse && historyResponse.data && historyResponse.data.length > 0) {
                   const completed = historyResponse.data
                     .filter(t => t.status === 'COMPLETED')
-                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+                    .sort((a, b) => {
+                        const dateA = new Date(a.createdAt || a.updatedAt || 0);
+                        const dateB = new Date(b.createdAt || b.updatedAt || 0);
+                        return dateB - dateA;
+                    })
                     .slice(0, 3); // Get top 3
                   
                   setRecentTrips(completed);
@@ -585,25 +610,12 @@ export default function LandingPage() {
               <div className="d-flex flex-column">
                 {recentTrips.length > 0 ? (
                   recentTrips.map((trip) => (
-                    <div 
+                    <RecentTripItem 
                         key={trip.id}
-                        className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2 cursor-pointer w-100"
+                        destination={trip.destinationAddress || trip.destination}
+                        date={formatDate(trip.createdAt || trip.updatedAt)}
                         onClick={() => navigate('/p/trips', { state: { openTripId: trip.id } })}
-                        style={{ cursor: 'pointer' }}
-                    >
-                        <div className="d-flex align-items-center gap-3 overflow-hidden">
-                            <div className="rounded-circle border d-flex align-items-center justify-content-center flex-shrink-0 bg-white" style={{ width: '35px', height: '35px' }}>
-                                <Icon path={mdiHistory} size={0.8} className="text-dark" />
-                            </div>
-                            <div className="d-flex flex-column overflow-hidden w-100">
-                                <p className="mb-0 text-truncate w-100">{trip.destinationAddress || trip.destination}</p>
-                                <small className="text-muted">{formatDate(trip.updatedAt)}</small>
-                            </div>
-                        </div>
-                        <div className="flex-shrink-0 ms-2">
-                             <i className="pi pi-chevron-right text-secondary" style={{ fontSize: '0.9rem' }}></i>
-                        </div>
-                    </div>
+                    />
                   ))
                 ) : (
                     <p className="text-muted small mb-0 text-center">No hay actividad reciente.</p>

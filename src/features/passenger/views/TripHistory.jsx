@@ -15,6 +15,42 @@ import { useLocation } from 'react-router-dom';
 import * as TripService from '../../../api/trip/trip.service';
 import * as RatingService from '../../../api/rating/rating.service';
 
+const TripCard = ({ address, date, price, origin, destination, onClick }) => (
+  <div className="card border shadow-sm mb-3 hoverable" style={{ borderRadius: '12px' }} onClick={onClick}>
+    <div className="card-body p-3">
+      <div className="row align-items-center">
+        {/* Imagen del Mapa */}
+        <div className="col-12 col-md-auto mb-3 mb-md-0">
+          <MapThumbnail origin={origin} destination={destination} size={100} className="trip-card-map-thumbnail" />
+        </div>
+
+        {/* Información del Viaje */}
+        <div className="col-12 col-md overflow-hidden">
+          <h6 className="fw-bold mb-1 text-dark text-truncate">{address}</h6>
+          <p className="text-muted small mb-1 text-truncate">{date}</p>
+          <p className="fw-bold text-dark mb-0 text-truncate">{price}</p>
+        </div>
+
+        {/* Botón Ver detalles */}
+        <div className="col-12 col-md-auto mt-3 mt-md-0 d-flex justify-content-center justify-content-md-end">
+          <Button
+            label="Ver detalles"
+            outlined
+            size="small"
+            icon={<Icon path={mdiDotsHorizontal} size={0.7} className="me-1" />}
+            className="w-100 w-md-auto"
+            style={{ color: 'var(--color-secondary)', borderColor: 'var(--color-secondary)' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick();
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export default function TripHistory() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -101,7 +137,7 @@ export default function TripHistory() {
           if (tripToOpen) {
               handleCardClick(tripToOpen);
               // Clear state to prevent reopening on refresh (optional but good practice)
-              window.history.replaceState({}, document.title);
+              navigate(location.pathname, { replace: true, state: {} });
           }
       }
   }, [trips, location.state]);
@@ -154,159 +190,119 @@ export default function TripHistory() {
     setSearchTerm(e.target.value);
   };
 
-  // --- MODAL DETALLES ---
-  const TripDetailsModal = () => (
-    <Dialog header="Detalles del Viaje" visible={showModal} onHide={handleCloseModal} style={{ width: '90vw', maxWidth: '700px' }} draggable={false} resizable={false} className="border-0 shadow" headerClassName="border-0 pb-0 fw-bold" contentClassName="pt-4">
-      {selectedTrip && (
-        <div className="d-flex flex-column gap-4">
-          {/* Mapa */}
-          <div style={{ height: '200px', borderRadius: '12px', overflow: 'hidden' }}>
-            <MapView
-              center={(() => {
-                  if (selectedTrip.origin && selectedTrip.destination) {
-                      const lat = (selectedTrip.origin.lat + selectedTrip.destination.lat) / 2;
-                      const lng = (selectedTrip.origin.lng + selectedTrip.destination.lng) / 2;
-                      if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
-                  }
-                  return [18.8503, -99.2008];
-              })()}
-              zoom={13}
-              height="100%"
-              markers={[
-                { position: [selectedTrip.origin.lat, selectedTrip.origin.lng], popup: 'Origen', color: '#089b8f' },
-                { position: [selectedTrip.destination.lat, selectedTrip.destination.lng], popup: 'Destino', color: '#a8bf30' },
-              ]}
-            />
-          </div>
-
-          {/* Sección: Conductor */}
-          <div>
-            <h6 className="fw-bold mb-3 d-flex align-items-center text-secondary">
-              <Icon path={mdiAccountOutline} size={0.9} className="me-2" /> Conductor
-            </h6>
-            <div className="d-flex align-items-center gap-3 ps-1">
-              <Avatar icon="pi pi-user" size="large" shape="circle" className="bg-secondary bg-opacity-25 text-secondary" />
-              <div>
-                <h6 className="fw-normal mb-0 fs-5">{selectedTrip.driver.name}</h6>
-                <div className="small text-muted">
-                  <i className="pi pi-star-fill me-1 text-warning" style={{ fontSize: '0.8rem' }}></i>
-                  <span className="text-dark fw-bold me-2">{selectedTrip.driver.rating}</span>• {selectedTrip.driver.trips} viajes completados
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sección: Recorrido */}
-          <div>
-            <h6 className="fw-bold mb-3 d-flex align-items-center text-secondary">
-              <Icon path={mdiCrosshairsGps} size={0.9} className="me-2" /> Recorrido
-            </h6>
-
-            {/* Card Origen */}
-            <div className="card border mb-3 shadow-none bg-light" style={{ borderRadius: '8px' }}>
-              <div className="card-body py-2 px-3">
-                <div className="text-dark small mb-0">
-                  <span className="text-secondary me-2 fw-bold">Origen • {selectedTrip.date}</span>
-                  <div className="text-dark mt-1">{selectedTrip.origin.name}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card Destino */}
-            <div className="card border mb-0 shadow-none bg-light" style={{ borderRadius: '8px' }}>
-              <div className="card-body py-2 px-3">
-                <div className="text-dark small mb-0">
-                  <span className="text-secondary me-2 fw-bold">Destino • {selectedTrip.date}</span>
-                  <div className="text-dark mt-1">{selectedTrip.destination.name}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sección: Detalles del pago */}
-          <div>
-            <h6 className="fw-bold mb-3 d-flex align-items-center text-secondary">
-              <Icon path={mdiCash} size={0.9} className="me-2" /> Detalles del pago
-            </h6>
-            <div className="card border shadow-none bg-light" style={{ borderRadius: '8px' }}>
-              <div className="card-body py-3 px-3">
-                <div className="d-flex flex-column gap-1 small">
-                  <div className="d-flex justify-content-between">
-                    <span className="fw-bold text-secondary">Método de Pago:</span>
-                    <span className="fw-bold text-dark">Efectivo</span>
-                  </div>
-                  <div className="d-flex justify-content-between">
-                    <span className="fw-bold text-secondary">Cantidad pagada:</span>
-                    <span className="fw-bold text-success">{selectedTrip.price}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Buttons */}
-          <div className="d-flex justify-content-end gap-2 pt-2">
-            <Button label="Cerrar" className="p-button-outlined fw-bold px-4" style={{ color: 'var(--color-secondary)', borderColor: 'var(--color-secondary)' }} onClick={handleCloseModal} />
-            <Button
-              label="Reagendar"
-              icon={<Icon path={mdiRefresh} size={0.8} className="me-2" />}
-              className="btn-lime px-4"
-              onClick={() => {
-                handleCloseModal();
-                navigate('/p/home', {
-                  state: {
-                    action: 'reschedule',
-                    origin: selectedTrip.origin,
-                    destination: selectedTrip.destination,
-                  },
-                });
-              }}
-            />
-          </div>
-        </div>
-      )}
-    </Dialog>
-  );
-
-  const TripCard = ({ address, date, price, origin, destination, onClick }) => (
-    <div className="card border shadow-sm mb-3 hoverable" style={{ borderRadius: '12px' }} onClick={onClick}>
-      <div className="card-body p-3">
-        <div className="row align-items-center">
-          {/* Imagen del Mapa */}
-          <div className="col-12 col-md-auto mb-3 mb-md-0">
-            <MapThumbnail origin={origin} destination={destination} size={100} className="trip-card-map-thumbnail" />
-          </div>
-
-          {/* Información del Viaje */}
-          <div className="col-12 col-md overflow-hidden">
-            <h6 className="fw-bold mb-1 text-dark text-truncate">{address}</h6>
-            <p className="text-muted small mb-1 text-truncate">{date}</p>
-            <p className="fw-bold text-dark mb-0 text-truncate">{price}</p>
-          </div>
-
-          {/* Botón Ver detalles */}
-          <div className="col-12 col-md-auto mt-3 mt-md-0 d-flex justify-content-center justify-content-md-end">
-            <Button
-              label="Ver detalles"
-              outlined
-              size="small"
-              icon={<Icon path={mdiDotsHorizontal} size={0.7} className="me-1" />}
-              className="w-100 w-md-auto"
-              style={{ color: 'var(--color-secondary)', borderColor: 'var(--color-secondary)' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
+  // --- RENDER ---
   return (
     <div className="w-100 container pb-3 py-3">
-      <TripDetailsModal />
+      <Dialog header="Detalles del Viaje" visible={showModal} onHide={handleCloseModal} style={{ width: '90vw', maxWidth: '700px' }} draggable={false} resizable={false} className="border-0 shadow" headerClassName="border-0 pb-0 fw-bold" contentClassName="pt-4">
+        {selectedTrip && (
+          <div className="d-flex flex-column gap-4">
+            {/* Mapa */}
+            <div style={{ height: '200px', borderRadius: '12px', overflow: 'hidden' }}>
+              <MapView
+                center={(() => {
+                    if (selectedTrip.origin && selectedTrip.destination) {
+                        const lat = (selectedTrip.origin.lat + selectedTrip.destination.lat) / 2;
+                        const lng = (selectedTrip.origin.lng + selectedTrip.destination.lng) / 2;
+                        if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
+                    }
+                    return [18.8503, -99.2008];
+                })()}
+                zoom={13}
+                height="100%"
+                markers={[
+                  { position: [selectedTrip.origin.lat, selectedTrip.origin.lng], popup: 'Origen', color: '#089b8f' },
+                  { position: [selectedTrip.destination.lat, selectedTrip.destination.lng], popup: 'Destino', color: '#a8bf30' },
+                ]}
+              />
+            </div>
+
+            {/* Sección: Conductor */}
+            <div>
+              <h6 className="fw-bold mb-3 d-flex align-items-center text-secondary">
+                <Icon path={mdiAccountOutline} size={0.9} className="me-2" /> Conductor
+              </h6>
+              <div className="d-flex align-items-center gap-3 ps-1">
+                <Avatar icon="pi pi-user" size="large" shape="circle" className="bg-secondary bg-opacity-25 text-secondary" />
+                <div>
+                  <h6 className="fw-normal mb-0 fs-5">{selectedTrip.driver.name}</h6>
+                  <div className="small text-muted">
+                    <i className="pi pi-star-fill me-1 text-warning" style={{ fontSize: '0.8rem' }}></i>
+                    <span className="text-dark fw-bold me-2">{selectedTrip.driver.rating}</span>• {selectedTrip.driver.trips} viajes completados
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sección: Recorrido */}
+            <div>
+              <h6 className="fw-bold mb-3 d-flex align-items-center text-secondary">
+                <Icon path={mdiCrosshairsGps} size={0.9} className="me-2" /> Recorrido
+              </h6>
+
+              {/* Card Origen */}
+              <div className="card border mb-3 shadow-none bg-light" style={{ borderRadius: '8px' }}>
+                <div className="card-body py-2 px-3">
+                  <div className="text-dark small mb-0">
+                    <span className="text-secondary me-2 fw-bold">Origen • {selectedTrip.date}</span>
+                    <div className="text-dark mt-1">{selectedTrip.origin.name}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Destino */}
+              <div className="card border mb-0 shadow-none bg-light" style={{ borderRadius: '8px' }}>
+                <div className="card-body py-2 px-3">
+                  <div className="text-dark small mb-0">
+                    <span className="text-secondary me-2 fw-bold">Destino • {selectedTrip.date}</span>
+                    <div className="text-dark mt-1">{selectedTrip.destination.name}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sección: Detalles del pago */}
+            <div>
+              <h6 className="fw-bold mb-3 d-flex align-items-center text-secondary">
+                <Icon path={mdiCash} size={0.9} className="me-2" /> Detalles del pago
+              </h6>
+              <div className="card border shadow-none bg-light" style={{ borderRadius: '8px' }}>
+                <div className="card-body py-3 px-3">
+                  <div className="d-flex flex-column gap-1 small">
+                    <div className="d-flex justify-content-between">
+                      <span className="fw-bold text-secondary">Método de Pago:</span>
+                      <span className="fw-bold text-dark">Efectivo</span>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <span className="fw-bold text-secondary">Cantidad pagada:</span>
+                      <span className="fw-bold text-success">{selectedTrip.price}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="d-flex justify-content-end gap-2 pt-2">
+              <Button label="Cerrar" className="p-button-outlined fw-bold px-4" style={{ color: 'var(--color-secondary)', borderColor: 'var(--color-secondary)' }} onClick={handleCloseModal} />
+              <Button
+                label="Reagendar"
+                icon={<Icon path={mdiRefresh} size={0.8} className="me-2" />}
+                className="btn-lime px-4"
+                onClick={() => {
+                  handleCloseModal();
+                  navigate('/p/home', {
+                    state: {
+                      action: 'reschedule',
+                      origin: selectedTrip.origin,
+                      destination: selectedTrip.destination,
+                    },
+                  });
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </Dialog>
 
       {/* Header y Buscador */}
       <div className="row mb-4">
