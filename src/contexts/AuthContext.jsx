@@ -77,6 +77,10 @@ export const AuthProvider = ({ children }) => {
     handleLogout();
   };
 
+  const updateUser = (updates) => {
+    setUser((prev) => ({ ...prev, ...updates }));
+  };
+
   const authContextValue = useMemo(
     () => ({
       user,
@@ -85,6 +89,8 @@ export const AuthProvider = ({ children }) => {
       isLoading,
       login,
       logout,
+      updateUser,
+      setToken, // Expose setToken
     }),
     [user, token, isAuthenticated, isLoading]
   );

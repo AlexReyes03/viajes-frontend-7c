@@ -3,11 +3,11 @@ import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import Icon from '@mdi/react';
-import { mdiPencilOutline, mdiSwapHorizontal } from '@mdi/js';
+import { mdiPencilOutline, mdiSwapHorizontal, mdiFilePdfBox, mdiCar } from '@mdi/js';
 import StatusBadge from './StatusBadge';
 
 // Data table component using PrimeReact
-export default function DataTableComponent({ data, onEdit, onToggleStatus }) {
+export default function DataTableComponent({ data, onEdit, onToggleStatus, onViewPdf, onViewVehicle }) {
   const actionBodyTemplate = (rowData) => {
     return (
       <div className="d-flex justify-content-center gap-2">
@@ -37,6 +37,32 @@ export default function DataTableComponent({ data, onEdit, onToggleStatus }) {
           tooltip="Cambiar estado"
           tooltipOptions={{ position: 'top' }}
         />
+        {rowData.type === 'Conductor' && (
+          <>
+            <Button
+              icon={<Icon path={mdiFilePdfBox} size={0.9} />}
+              className="p-button-outlined p-button-secondary"
+              style={{
+                width: '40px',
+                height: '40px',
+              }}
+              onClick={() => onViewPdf && onViewPdf(rowData)}
+              tooltip="Ver PDF"
+              tooltipOptions={{ position: 'top' }}
+            />
+            <Button
+              icon={<Icon path={mdiCar} size={0.9} />}
+              className="p-button-outlined p-button-help"
+              style={{
+                width: '40px',
+                height: '40px',
+              }}
+              onClick={() => onViewVehicle && onViewVehicle(rowData)}
+              tooltip="Datos del vehículo"
+              tooltipOptions={{ position: 'top' }}
+            />
+          </>
+        )}
       </div>
     );
   };
@@ -63,7 +89,7 @@ export default function DataTableComponent({ data, onEdit, onToggleStatus }) {
           <Column field="email" header="Correo" sortable style={{ minWidth: '200px' }}></Column>
           <Column field="type" header="Tipo" sortable style={{ minWidth: '150px', textAlign: 'center' }} bodyStyle={{ textAlign: 'center' }}></Column>
           <Column field="status" header="Estado" sortable body={statusBodyTemplate} style={{ minWidth: '150px', textAlign: 'center' }}></Column>
-          <Column header="Acciones" body={actionBodyTemplate} style={{ minWidth: '150px', textAlign: 'center' }}></Column>
+          <Column header="Acciones" body={actionBodyTemplate} style={{ minWidth: '220px', textAlign: 'center' }}></Column>
         </DataTable>
       </div>
     </div>
