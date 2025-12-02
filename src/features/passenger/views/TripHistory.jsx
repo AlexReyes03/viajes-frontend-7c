@@ -256,8 +256,8 @@ export default function TripHistory() {
                 navigate('/p/home', {
                   state: {
                     action: 'reschedule',
-                    origin: selectedTrip.origin.name,
-                    destination: selectedTrip.destination.name,
+                    origin: selectedTrip.origin,
+                    destination: selectedTrip.destination,
                   },
                 });
               }}

@@ -79,6 +79,28 @@ export default function LandingPage() {
     currentTripRef.current = currentTrip;
   }, [tripState, currentTrip]);
 
+  // Handle Reschedule Action from TripHistory
+  useEffect(() => {
+    if (location.state?.action === 'reschedule') {
+      const { origin, destination } = location.state;
+
+      if (origin && destination) {
+        setOriginValue(origin.name);
+        setOriginCoords([origin.lat, origin.lng]);
+
+        setDestinationValue(destination.name);
+        setDestinationCoords([destination.lat, destination.lng]);
+
+        setShowTripCard(true);
+        setSelectionMode('none');
+        setTripState('request');
+
+        // Clear state to prevent re-run
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state]);
+
   useEffect(() => {
     if (user?.rating) {
       setPassengerRating(user.rating);
