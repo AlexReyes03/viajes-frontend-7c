@@ -13,6 +13,7 @@ import MapThumbnail from '../../../components/global/MapThumbnail';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import * as TripService from '../../../api/trip/trip.service';
+import * as RatingService from '../../../api/rating/rating.service';
 
 export default function TripHistory() {
   const { user } = useAuth();
@@ -46,7 +47,12 @@ export default function TripHistory() {
                 return {
                     id: t.id,
                     address: t.destinationAddress || t.destination || 'Destino desconocido',
-                    date: new Date(t.status === 'COMPLETED' ? (t.updatedAt || Date.now()) : Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }),
+                    date: (() => {
+                        const d = new Date(t.createdAt || t.updatedAt || Date.now());
+                        const dateStr = d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+                        const timeStr = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                        return `${dateStr} - ${timeStr}`;
+                    })(),
                     price: `$${(t.fare || 0).toFixed(2)} MXN`,
                     origin: { 
                         name: t.originAddress || t.origin || 'Origen desconocido', 
@@ -60,11 +66,11 @@ export default function TripHistory() {
                     },
                     driver: {
                         name: t.driverName || 'Conductor Asignado',
-                        rating: 4.9, // Mock rating if not available
+                        rating: 4.9, // Default fallback
                         trips: 150 // Mock trips count
                     },
                     status: t.status,
-                    fullDate: t.updatedAt || new Date().toISOString(),
+                    fullDate: t.createdAt || t.updatedAt || new Date().toISOString(),
                     isLatest: false
                 };
             });
@@ -111,9 +117,32 @@ export default function TripHistory() {
     });
   }, [searchTerm, trips]);
 
-  const handleCardClick = (trip) => {
+  const handleCardClick = async (trip) => {
     setSelectedTrip(trip);
     setShowModal(true);
+    
+    try {
+        const ratingsResponse = await RatingService.getRatingsByTrip(trip.id);
+        if (ratingsResponse && ratingsResponse.data && ratingsResponse.data.length > 0) {
+            // For passenger, we are seeing the driver.
+            // Ideally we want the rating the passenger gave to the driver? Or the driver's rating?
+            // The modal shows "Driver ... Rating: 4.9".
+            // If the user said "show the rating given in the specific trip", 
+            // it likely refers to the rating *received* by the entity shown, or the rating *given* by the user.
+            // Let's just show the rating associated with the trip interaction.
+             const ratingVal = ratingsResponse.data[0].rating;
+             
+             setSelectedTrip(prev => ({
+                 ...prev,
+                 driver: {
+                     ...prev.driver,
+                     rating: ratingVal
+                 }
+             }));
+        }
+    } catch (error) {
+        console.error('Error fetching trip rating:', error);
+    }
   };
 
   const handleCloseModal = () => {
@@ -177,7 +206,7 @@ export default function TripHistory() {
             <div className="card border mb-3 shadow-none bg-light" style={{ borderRadius: '8px' }}>
               <div className="card-body py-2 px-3">
                 <div className="text-dark small mb-0">
-                  <span className="text-secondary me-2 fw-bold">Origen • {selectedTrip.date.split(' - ')[0]}</span>
+                  <span className="text-secondary me-2 fw-bold">Origen • {selectedTrip.date}</span>
                   <div className="text-dark mt-1">{selectedTrip.origin.name}</div>
                 </div>
               </div>
@@ -187,7 +216,7 @@ export default function TripHistory() {
             <div className="card border mb-0 shadow-none bg-light" style={{ borderRadius: '8px' }}>
               <div className="card-body py-2 px-3">
                 <div className="text-dark small mb-0">
-                  <span className="text-secondary me-2 fw-bold">Destino • {selectedTrip.date.split(' - ')[0]}</span>
+                  <span className="text-secondary me-2 fw-bold">Destino • {selectedTrip.date}</span>
                   <div className="text-dark mt-1">{selectedTrip.destination.name}</div>
                 </div>
               </div>

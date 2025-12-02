@@ -65,7 +65,7 @@ export default function Navbar({ variant = 'login', user = {} }) {
   ];
 
   const renderDesktopLinks = () => {
-    if (variant !== 'client') return <div className="flex-grow-1"></div>;
+    if (variant !== 'client') return <div className="flex-grow-1 d-none d-lg-block"></div>;
     const links = getNavigationLinks();
 
     return (
@@ -155,15 +155,15 @@ export default function Navbar({ variant = 'login', user = {} }) {
       case 'login':
         return (
           <Link to="/register" className="d-flex align-items-center text-white text-decoration-none fw-medium">
-            <i className="bi bi-person fs-5 me-2"></i>
             Registrarse
+            <i className="pi pi-user-plus fs-5 ms-2"></i>
           </Link>
         );
       case 'register':
         return (
           <Link to="/login" className="d-flex align-items-center text-white text-decoration-none fw-medium">
-            <i className="bi bi-person fs-5 me-2"></i>
             Iniciar sesión
+            <i className="pi pi-sign-in fs-5 ms-2"></i>
           </Link>
         );
       case 'recover':
@@ -192,7 +192,7 @@ export default function Navbar({ variant = 'login', user = {} }) {
           VeloCity
         </Link>
 
-        <div className="d-flex align-items-center order-lg-3">{renderRightContent()}</div>
+        <div className="d-flex align-items-center order-lg-3 ms-auto">{renderRightContent()}</div>
 
         {/* Row 2 (Mobile) / Center (Desktop): Navigation */}
         <div className="w-100 d-lg-none order-3">{renderMobileTabs()}</div>

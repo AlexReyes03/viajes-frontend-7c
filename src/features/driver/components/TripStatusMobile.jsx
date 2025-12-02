@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'primereact/button';
 import { Avatar } from 'primereact/avatar';
+import { Rating } from 'primereact/rating';
 import Icon from '@mdi/react';
 import { mdiCrosshairsGps, mdiHome, mdiCash, mdiStar } from '@mdi/js';
 
@@ -15,7 +16,8 @@ export default function TripStatusMobile({
     onArriveDropoff,
     onCompleteTrip,
     onClose,
-    onHide
+    onHide,
+    onRate
 }) {
     const [loadingAction, setLoadingAction] = React.useState(null);
 
@@ -207,27 +209,38 @@ export default function TripStatusMobile({
                   />        </>
     );
 
-    const FinishedView = () => (
-        <>
-            <h5 className="fw-bold mb-3">Resumen del Viaje</h5>
-            <div className="text-center mb-4">
-                <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-3 mb-3">
-                    <Icon path={mdiCash} size={2} className="text-success" />
+    const FinishedView = () => {
+        const [rating, setRating] = React.useState(0);
+
+        return (
+            <>
+                <h5 className="fw-bold mb-3">Resumen del Viaje</h5>
+                <div className="text-center mb-4">
+                    <div className="rounded-circle bg-success bg-opacity-10 d-inline-flex p-3 mb-3">
+                        <Icon path={mdiCash} size={2} className="text-success" />
+                    </div>
+                    <h3 className="fw-bold text-success mb-0">${tripData?.fare?.toFixed(2) || '0.00'}</h3>
+                    <p className="text-muted small">Viaje completado exitosamente</p>
                 </div>
-                <h3 className="fw-bold text-success mb-0">${tripData?.fare?.toFixed(2) || '0.00'}</h3>
-                <p className="text-muted small">Viaje completado exitosamente</p>
-            </div>
 
-            <p className="small text-muted mb-2 fw-bold">Resumen</p>
-            <TripDetails />
+                <p className="small text-muted mb-2 fw-bold">Resumen</p>
+                <TripDetails />
 
-            <Button
-                label="Cerrar"
-                className="w-100 btn-lime mt-4 py-2 fs-5 border-0"
-                onClick={onClose}
-            />
-        </>
-    );
+                <h5 className="fw-bold mt-4 mb-2 text-center">Califica al pasajero</h5>
+                <div className="d-flex justify-content-center mb-3">
+                    <Rating value={rating} onChange={(e) => setRating(e.value)} cancel={false} stars={5} />
+                </div>
+
+                <Button
+                    label="Enviar"
+                    className="w-100 btn-lime mt-2 py-2 fs-5 border-0"
+                    onClick={() => handleAction('rate', () => onRate(rating))}
+                    disabled={!rating || loadingAction !== null}
+                    loading={loadingAction === 'rate'}
+                />
+            </>
+        );
+    };
 
     return (
         <div className="card border-0 shadow-sm w-100 mb-3" style={{ borderRadius: '12px' }}>
@@ -253,5 +266,6 @@ TripStatusMobile.propTypes = {
     onArriveDropoff: PropTypes.func,
     onCompleteTrip: PropTypes.func,
     onClose: PropTypes.func,
-    onHide: PropTypes.func
+    onHide: PropTypes.func,
+    onRate: PropTypes.func
 };

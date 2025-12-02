@@ -3,6 +3,7 @@ import { Button } from 'primereact/button';
 import { Avatar } from 'primereact/avatar';
 import { InputText } from 'primereact/inputtext';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import { Rating } from 'primereact/rating';
 import Icon from '@mdi/react';
 import { mdiCrosshairsGps, mdiArrowRight, mdiHome, mdiCash, mdiStar } from '@mdi/js';
 
@@ -20,7 +21,8 @@ export default function TripStatusMobile({
   onConfirmPickup,
   onConfirmDropoff,
   isFormValid,
-  onHide 
+  onHide,
+  onRate 
 }) {
   const [loadingAction, setLoadingAction] = React.useState(null);
 
@@ -259,25 +261,36 @@ export default function TripStatusMobile({
     </>
   );
 
-  const FinishedView = () => (
-    <>
-      <h5 className="fw-bold mb-3">Resumen del Viaje</h5>
-      <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
-      <DriverInfo />
+  const FinishedView = () => {
+    const [rating, setRating] = React.useState(0);
 
-      <p className="small text-muted mb-2 fw-bold">Detalles del viaje</p>
-      <TripDetails />
+    return (
+      <>
+        <h5 className="fw-bold mb-3">Resumen del Viaje</h5>
+        <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
+        <DriverInfo />
 
-      <p className="small text-muted mb-2 fw-bold mt-2">Detalles del pago</p>
-      <PaymentDetails />
+        <p className="small text-muted mb-2 fw-bold">Detalles del viaje</p>
+        <TripDetails />
 
-      <Button
-        label="Cerrar"
-        className="w-100 btn-lime mt-4 py-2 fs-5 border-0"
-        onClick={onResetTrip}
-      />
-    </>
-  );
+        <p className="small text-muted mb-2 fw-bold mt-2">Detalles del pago</p>
+        <PaymentDetails />
+
+        <h5 className="fw-bold mt-4 mb-2 text-center">Califica al conductor</h5>
+        <div className="d-flex justify-content-center mb-3">
+            <Rating value={rating} onChange={(e) => setRating(e.value)} cancel={false} stars={5} />
+        </div>
+
+        <Button
+          label="Enviar"
+          className="w-100 btn-lime mt-2 py-2 fs-5 border-0"
+          onClick={() => handleAction('rate', () => onRate(rating))}
+          disabled={!rating || loadingAction !== null}
+          loading={loadingAction === 'rate'}
+        />
+      </>
+    );
+  };
 
   return (
     <div className="card border-0 shadow-sm w-100 mb-3" style={{ borderRadius: '12px' }}>

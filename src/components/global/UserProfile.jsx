@@ -202,7 +202,7 @@ export default function UserProfile() {
           <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
             <div className="card-body p-3 d-flex flex-column align-items-center text-center">
               <div className="mb-3 position-relative">
-                <Avatar image={user?.avatar || "https://primefaces.org/cdn/primereact/images/avatar/stephenshaw.png"} shape="circle" style={{ width: '150px', height: '150px', border: '4px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                <Avatar image={user.avatar} icon={!user.avatar ? 'pi pi-user' : null} shape="circle" className="bg-warning text-white" style={{ width: '150px', height: '150px', border: '4px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
               </div>
 
               <h5 className="fw-bold mb-1">{user?.name} {user?.paternalSurname}</h5>

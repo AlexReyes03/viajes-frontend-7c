@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Icon from '@mdi/react';
 import { mdiCurrencyUsd, mdiCarMultiple, mdiStar, mdiDotsHorizontal, mdiCalendar, mdiFilterOff, mdiAccountOutline, mdiCrosshairsGps, mdiCash, mdiMagnify } from '@mdi/js';
 import { Button } from 'primereact/button';
@@ -11,6 +12,7 @@ import MapView from '../../../components/global/MapView';
 
 import { useAuth } from '../../../contexts/AuthContext';
 import * as TripService from '../../../api/trip/trip.service';
+import * as RatingService from '../../../api/rating/rating.service';
 
 /**
  * TripHistory - Driver Trip History View
@@ -22,6 +24,7 @@ export default function TripHistory() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const location = useLocation(); // Needed for auto-open
 
   const [historyData, setHistoryData] = useState({
     trips: [],
@@ -50,12 +53,13 @@ export default function TripHistory() {
 
     fetchHistory();
   }, [user]);
-
+  
   // Derived statistics
+  const averageRatingValue = parseFloat(user?.rating) || 5.0;
   const statistics = {
     totalEarnings: historyData.totalIncome,
     totalTrips: historyData.trips.filter(t => t.status === 'COMPLETED').length,
-    averageRating: user?.rating || 5.0, // Rating is usually on user profile
+    averageRating: averageRatingValue, // Rating is usually on user profile
   };
 
   // Process trips for display
@@ -65,8 +69,8 @@ export default function TripHistory() {
         .map(t => ({
             id: t.id,
             destination: t.destinationAddress || t.destination,
-            date: new Date(t.status === 'COMPLETED' ? (t.updatedAt || Date.now()) : Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
-            time: new Date(t.status === 'COMPLETED' ? (t.updatedAt || Date.now()) : Date.now()).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+            date: new Date(t.createdAt || t.updatedAt || Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
+            time: new Date(t.createdAt || t.updatedAt || Date.now()).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
             amount: t.fare,
             currency: 'MXN',
             origin: { 
@@ -80,11 +84,23 @@ export default function TripHistory() {
                 name: t.destinationAddress || t.destination 
             },
             passengerName: t.clientName || 'Pasajero',
-            rating: t.rating || 0,
-            fullDate: t.updatedAt
+            rating: t.rating || 0, // Default fallback, updated on view
+            fullDate: t.createdAt || t.updatedAt
         }))
         .sort((a, b) => new Date(b.fullDate) - new Date(a.fullDate));
   }, [historyData.trips]);
+
+    // Handle auto-open from Dashboard
+  useEffect(() => {
+      if (tripsList.length > 0 && location.state?.openTripId) {
+          const tripToOpen = tripsList.find(t => t.id === location.state.openTripId);
+          if (tripToOpen) {
+              handleViewDetails(tripToOpen);
+              // Clear state
+              window.history.replaceState({}, document.title);
+          }
+      }
+  }, [tripsList, location.state]);
 
   // TODO: Backend should provide chart data. For now we use static/mock data for charts to keep UI layout.
   // Mock chart data for statistics cards
@@ -202,11 +218,22 @@ export default function TripHistory() {
   );
 
   // Handler functions - Ready for backend integration
-  const handleViewDetails = (trip) => {
+  const handleViewDetails = async (trip) => {
     console.log('View trip details:', trip);
-    setSelectedTrip(trip);
+    setSelectedTrip(trip); // Show immediately
     setShowDetailsDialog(true);
-    // TODO: Fetch full trip details from API
+    
+    try {
+        const ratingsResponse = await RatingService.getRatingsByTrip(trip.id);
+        if (ratingsResponse && ratingsResponse.data && ratingsResponse.data.length > 0) {
+            // Use the first rating found for now (assume it's the relevant one or only one exists)
+            // Ideally we filter by who rated whom, but for now we show the rating associated with this trip.
+            const ratingVal = ratingsResponse.data[0].rating;
+            setSelectedTrip(prev => ({ ...prev, rating: ratingVal }));
+        }
+    } catch (error) {
+        console.error('Error fetching trip rating:', error);
+    }
   };
 
   const handleCloseDialog = () => {
@@ -349,7 +376,7 @@ export default function TripHistory() {
               <div className="card border mb-3 shadow-none bg-light" style={{ borderRadius: '8px' }}>
                 <div className="card-body py-2 px-3">
                   <div className="text-dark small mb-0">
-                    <span className="text-secondary me-2 fw-bold">Origen • {selectedTrip.date}</span>
+                    <span className="text-secondary me-2 fw-bold">Origen • {selectedTrip.date} - {selectedTrip.time}</span>
                     <div className="text-dark mt-1">{selectedTrip.origin.name}</div>
                   </div>
                 </div>
@@ -359,7 +386,7 @@ export default function TripHistory() {
               <div className="card border mb-0 shadow-none bg-light" style={{ borderRadius: '8px' }}>
                 <div className="card-body py-2 px-3">
                   <div className="text-dark small mb-0">
-                    <span className="text-secondary me-2 fw-bold">Destino • {selectedTrip.date}</span>
+                    <span className="text-secondary me-2 fw-bold">Destino • {selectedTrip.date} - {selectedTrip.time}</span>
                     <div className="text-dark mt-1">{selectedTrip.destination}</div>
                   </div>
                 </div>
