@@ -36,7 +36,7 @@ export default function UserProfile() {
       maternalSurname: '',
       email: '',
       phone: '',
-      username: ''
+      username: '',
     });
     const [loading, setLoading] = useState(false);
     const closeBtnRef = useRef(null);
@@ -49,26 +49,26 @@ export default function UserProfile() {
           maternalSurname: user.maternalSurname || '',
           email: user.email || '',
           phone: user.phone || '',
-          username: user.username || ''
+          username: user.username || '',
         });
       }
     }, [user]);
 
     const isModified = useMemo(() => {
-        if (!user) return false;
-        return (
-            formData.name !== (user.name || '') ||
-            formData.paternalSurname !== (user.paternalSurname || '') ||
-            formData.maternalSurname !== (user.maternalSurname || '') ||
-            formData.email !== (user.email || '') ||
-            formData.phone !== (user.phone || '') ||
-            formData.username !== (user.username || '')
-        );
+      if (!user) return false;
+      return (
+        formData.name !== (user.name || '') ||
+        formData.paternalSurname !== (user.paternalSurname || '') ||
+        formData.maternalSurname !== (user.maternalSurname || '') ||
+        formData.email !== (user.email || '') ||
+        formData.phone !== (user.phone || '') ||
+        formData.username !== (user.username || '')
+      );
     }, [formData, user]);
 
     const handleChange = (e) => {
       const { id, value } = e.target;
-      setFormData(prev => ({ ...prev, [id]: value }));
+      setFormData((prev) => ({ ...prev, [id]: value }));
     };
 
     const handleSave = async () => {
@@ -79,22 +79,22 @@ export default function UserProfile() {
         const payload = {
           id: user.id,
           ...formData,
-          status: user.status === true || user.status === 'true'
+          status: user.status === true || user.status === 'true',
         };
 
         const response = await UserService.updateUser(payload);
-        
+
         // Check for new token if username changed
         if (response?.data?.token) {
-            localStorage.setItem('token', response.data.token);
-            setToken(response.data.token);
+          localStorage.setItem('token', response.data.token);
+          setToken(response.data.token);
         }
-        
+
         // Update local context
         updateUser(formData);
-        
+
         toast.current.show({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente' });
-        
+
         // Close modal
         if (closeBtnRef.current) closeBtnRef.current.click();
       } catch (error) {
@@ -187,10 +187,10 @@ export default function UserProfile() {
     useEffect(() => {
       const newErrors = {};
       if (newPass && newPass.length < 6) {
-        newErrors.newPass = "La contraseña debe tener al menos 6 caracteres";
+        newErrors.newPass = 'La contraseña debe tener al menos 6 caracteres';
       }
       if (confirmPass && newPass !== confirmPass) {
-        newErrors.confirmPass = "Las contraseñas no coinciden";
+        newErrors.confirmPass = 'Las contraseñas no coinciden';
       }
       setErrors(newErrors);
     }, [newPass, confirmPass]);
@@ -198,12 +198,12 @@ export default function UserProfile() {
     const isSaveDisabled = !currentPass || !newPass || !confirmPass || Object.keys(errors).length > 0 || loading;
 
     const handleBlur = (field) => {
-      setTouched(prev => ({ ...prev, [field]: true }));
+      setTouched((prev) => ({ ...prev, [field]: true }));
     };
 
     const handleCurrentPassChange = (e) => {
-        setCurrentPass(e.target.value);
-        if (serverError) setServerError('');
+      setCurrentPass(e.target.value);
+      if (serverError) setServerError('');
     };
 
     const handleSave = async () => {
@@ -212,22 +212,22 @@ export default function UserProfile() {
       setLoading(true);
       try {
         const response = await authService.changePassword(currentPass, newPass);
-        
+
         // Check for new token
         if (response?.token) {
-            localStorage.setItem('token', response.token);
-            setToken(response.token);
+          localStorage.setItem('token', response.token);
+          setToken(response.token);
         }
 
         toast.current.show({ severity: 'success', summary: 'Éxito', detail: 'Contraseña actualizada correctamente' });
-        
+
         // Clear fields
         setCurrentPass('');
         setNewPass('');
         setConfirmPass('');
         setTouched({ new: false, confirm: false });
         setServerError('');
-        
+
         if (closeBtnRef.current) closeBtnRef.current.click();
       } catch (error) {
         console.error(error);
@@ -248,37 +248,17 @@ export default function UserProfile() {
             <div className="modal-body pt-4">
               <form className="d-flex flex-column gap-2">
                 <div>
-                    <PasswordInput 
-                        id="currentPassword" 
-                        label="Contraseña actual" 
-                        placeholder="Contraseña actual" 
-                        value={currentPass} 
-                        onChange={handleCurrentPassChange} 
-                    />
-                    {serverError && <small className="text-danger ps-1">{serverError}</small>}
+                  <PasswordInput id="currentPassword" label="Contraseña actual" placeholder="Contraseña actual" value={currentPass} onChange={handleCurrentPassChange} />
+                  {serverError && <small className="text-danger ps-1">{serverError}</small>}
                 </div>
-                
+
                 <div>
-                  <PasswordInput 
-                    id="newPassword" 
-                    label="Nueva contraseña" 
-                    placeholder="Nueva contraseña" 
-                    value={newPass} 
-                    onChange={(e) => setNewPass(e.target.value)}
-                    onBlur={() => handleBlur('new')}
-                  />
+                  <PasswordInput id="newPassword" label="Nueva contraseña" placeholder="Nueva contraseña" value={newPass} onChange={(e) => setNewPass(e.target.value)} onBlur={() => handleBlur('new')} />
                   {touched.new && errors.newPass && <small className="text-danger ps-1">{errors.newPass}</small>}
                 </div>
 
                 <div>
-                  <PasswordInput 
-                    id="confirmPassword" 
-                    label="Confirmar contraseña" 
-                    placeholder="Confirmar contraseña" 
-                    value={confirmPass} 
-                    onChange={(e) => setConfirmPass(e.target.value)}
-                    onBlur={() => handleBlur('confirm')}
-                  />
+                  <PasswordInput id="confirmPassword" label="Confirmar contraseña" placeholder="Confirmar contraseña" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} onBlur={() => handleBlur('confirm')} />
                 </div>
 
                 {/* Password Mismatch Alert */}
@@ -360,10 +340,10 @@ export default function UserProfile() {
   const formatCreatedAt = (dateString) => {
     if (!dateString) return 'No disponible';
     try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
     } catch {
-        return dateString;
+      return dateString;
     }
   };
 
@@ -382,8 +362,10 @@ export default function UserProfile() {
                 <Avatar image={user?.avatar} icon={!user?.avatar ? 'pi pi-user' : null} shape="circle" className="bg-warning text-white" style={{ width: '150px', height: '150px', border: '4px solid #fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
               </div>
 
-              <h5 className="fw-bold mb-1">{user?.name} {user?.paternalSurname}</h5>
-              <span className="text-muted fs-5 mb-4">{user?.roles?.includes('ROLE_CONDUCTOR') ? 'Conductor' : 'Pasajero'}</span>
+              <h5 className="fw-bold mb-1">
+                {user?.name} {user?.paternalSurname}
+              </h5>
+              <span className="text-muted fs-5 mb-4">{user?.roles?.includes('ROLE_ADMIN') ? 'Administrador' : user?.roles?.includes('ROLE_CONDUCTOR') ? 'Conductor' : 'Pasajero'}</span>
 
               <div className="w-100 d-flex flex-column gap-2">
                 <Button
@@ -417,16 +399,16 @@ export default function UserProfile() {
                   onClick={() => navigate(`${currentRoot}/trips`)}
                 />
 
-                <Button 
-                  label="Cerrar Sesión" 
-                  icon={<Icon path={mdiLogout} size={1} className="me-2" />} 
-                  className="w-100 text-start p-3 mt-2 bg-light hoverable border-0" 
-                  text 
-                  style={{ color: '#BF3030' }} 
+                <Button
+                  label="Cerrar Sesión"
+                  icon={<Icon path={mdiLogout} size={1} className="me-2" />}
+                  className="w-100 text-start p-3 mt-2 bg-light hoverable border-0"
+                  text
+                  style={{ color: '#BF3030' }}
                   onClick={() => {
                     logout();
                     navigate('/login');
-                  }} 
+                  }}
                 />
               </div>
             </div>
