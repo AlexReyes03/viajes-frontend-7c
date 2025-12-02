@@ -1,66 +1,150 @@
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { ProgressSpinner } from 'primereact/progressspinner';
 import Icon from '@mdi/react';
 import { mdiAccountGroup, mdiCarConnected, mdiCheckCircleOutline, mdiCurrencyUsd } from '@mdi/js';
 import StatCard from '../components/StatCard';
+import AdminPieChart from '../components/AdminPieChart';
+import useAdminStats from '../../../hooks/useAdminStats';
 
-// Admin statistics dashboard view
+// Admin statistics dashboard view with real API connection
 export default function Statistics() {
-  // Mock data for statistics cards
-  const stats = {
-    totalUsers: 2847,
-    activeDrivers: 485,
-    completedTrips: 2847,
-    totalIncome: 2847,
+  const { stats, chartData, loading, error, refetch } = useAdminStats();
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="container py-3">
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+          <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="4" />
+        </div>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="container py-3">
+        <div className="alert alert-danger" role="alert">
+          <strong>Error:</strong> {error}
+          <button className="btn btn-link" onClick={refetch}>
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Format currency for display
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value || 0);
   };
-
-  // Mock data for pie chart
-  const chartData = [
-    { name: 'Clientes', value: 1850, color: 'var(--color-cyan-tint-1)' },
-    { name: 'Conductores', value: 485, color: 'var(--color-lime-tint-1)' },
-    { name: 'Viajes Activos', value: 312, color: 'var(--color-purple-tint-1)' },
-    { name: 'Ingresos', value: 200, color: 'var(--color-teal-tint-1)' },
-  ];
-
-  // Colors for pie chart cells
-  const COLORS = ['#0eafd8', '#a8bf30', '#c25cff', '#089b8f'];
 
   return (
     <div className="container py-3">
       {/* Statistics Cards Row */}
       <div className="row g-3 mb-4">
         <div className="col-12 col-sm-6 col-xl-3">
-          <StatCard title="Total Usuarios" value={stats.totalUsers.toLocaleString('es-MX')} icon={mdiAccountGroup} />
+          <StatCard title="Total Usuarios" value={(stats?.totalUsers || 0).toLocaleString('es-MX')} icon={mdiAccountGroup} />
         </div>
         <div className="col-12 col-sm-6 col-xl-3">
-          <StatCard title="Conductores Activos" value={stats.activeDrivers.toLocaleString('es-MX')} icon={mdiCarConnected} />
+          <StatCard title="Conductores Activos" value={(stats?.activeDrivers || 0).toLocaleString('es-MX')} icon={mdiCarConnected} />
         </div>
         <div className="col-12 col-sm-6 col-xl-3">
-          <StatCard title="Viajes Completados" value={stats.completedTrips.toLocaleString('es-MX')} icon={mdiCheckCircleOutline} />
+          <StatCard title="Viajes Completados" value={(stats?.completedTrips || 0).toLocaleString('es-MX')} icon={mdiCheckCircleOutline} />
         </div>
         <div className="col-12 col-sm-6 col-xl-3">
-          <StatCard title="Ingresos Totales" value={stats.totalIncome.toLocaleString('es-MX')} icon={mdiCurrencyUsd} />
+          <StatCard title="Ingresos Totales" value={formatCurrency(stats?.totalIncome)} icon={mdiCurrencyUsd} />
         </div>
       </div>
 
       {/* Pie Chart Section */}
-      <div className="row">
+      <div className="row mb-4">
         <div className="col-12 col-lg-6 offset-lg-3">
-          <div className="card shadow-sm">
-            <div className="card-body p-4">
-              <div style={{ width: '100%', height: '350px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={chartData} cx="50%" cy="45%" innerRadius={0} outerRadius={120} paddingAngle={2} dataKey="value">
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend verticalAlign="bottom" height={36} formatter={(value) => <span style={{ color: '#333', fontWeight: '500' }}>{value}</span>} />
-                  </PieChart>
-                </ResponsiveContainer>
+          <AdminPieChart
+            data={chartData}
+            height={380}
+            title="Distribución del Sistema"
+            showLegend={true}
+            enableArcLinkLabels={true}
+            innerRadius={0.5}
+          />
+        </div>
+      </div>
+
+      {/* Additional Stats Row */}
+      <div className="row g-3">
+        <div className="col-12 col-md-4">
+          <div className="card shadow-sm h-100">
+            <div className="card-body p-3">
+              <h6 className="text-muted small mb-2">Desglose de Usuarios</h6>
+              <div className="d-flex justify-content-between mb-2">
+                <span>Clientes</span>
+                <strong>{(stats?.totalClients || 0).toLocaleString('es-MX')}</strong>
               </div>
-              <h5 className="text-center fw-semibold mt-2 mb-0">Métricas</h5>
+              <div className="d-flex justify-content-between mb-2">
+                <span>Conductores</span>
+                <strong>{(stats?.totalDrivers || 0).toLocaleString('es-MX')}</strong>
+              </div>
+              <div className="d-flex justify-content-between">
+                <span>Conductores Pendientes</span>
+                <strong className="text-warning">{(stats?.pendingDrivers || 0).toLocaleString('es-MX')}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-12 col-md-4">
+          <div className="card shadow-sm h-100">
+            <div className="card-body p-3">
+              <h6 className="text-muted small mb-2">Estado de Viajes</h6>
+              <div className="d-flex justify-content-between mb-2">
+                <span>Total Viajes</span>
+                <strong>{(stats?.totalTrips || 0).toLocaleString('es-MX')}</strong>
+              </div>
+              <div className="d-flex justify-content-between mb-2">
+                <span>Activos</span>
+                <strong className="text-primary">{(stats?.activeTrips || 0).toLocaleString('es-MX')}</strong>
+              </div>
+              <div className="d-flex justify-content-between">
+                <span>Cancelados</span>
+                <strong className="text-danger">{(stats?.cancelledTrips || 0).toLocaleString('es-MX')}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-12 col-md-4">
+          <div className="card shadow-sm h-100">
+            <div className="card-body p-3">
+              <h6 className="text-muted small mb-2">Métricas de Rendimiento</h6>
+              <div className="d-flex justify-content-between mb-2">
+                <span>Tasa de Completado</span>
+                <strong>
+                  {stats?.totalTrips > 0
+                    ? Math.round((stats.completedTrips / stats.totalTrips) * 100)
+                    : 0}%
+                </strong>
+              </div>
+              <div className="d-flex justify-content-between mb-2">
+                <span>Ingreso Promedio</span>
+                <strong>
+                  {formatCurrency(stats?.completedTrips > 0 ? stats.totalIncome / stats.completedTrips : 0)}
+                </strong>
+              </div>
+              <div className="d-flex justify-content-between">
+                <span>Viajes por Conductor</span>
+                <strong>
+                  {stats?.activeDrivers > 0
+                    ? Math.round(stats.totalTrips / stats.activeDrivers)
+                    : 0}
+                </strong>
+              </div>
             </div>
           </div>
         </div>
