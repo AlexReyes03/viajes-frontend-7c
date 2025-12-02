@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useWebSocket } from '../../../hooks/useWebSocket';
 import * as TripService from '../../../api/trip/trip.service';
+import * as RatingService from '../../../api/rating/rating.service';
 import Icon from '@mdi/react';
 import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiAccount, mdiStar } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
@@ -34,8 +35,12 @@ const ToolButton = ({ icon, label, onClick }) => (
   </div>
 );
 
-const RatingItem = ({ passengerName, rating }) => (
-  <div className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2">
+const RatingItem = ({ passengerName, rating, onClick }) => (
+  <div 
+    className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2 cursor-pointer"
+    onClick={onClick}
+    style={{ cursor: 'pointer' }}
+  >
     <div className="d-flex align-items-center gap-3 overflow-hidden">
       <div className="rounded-circle border d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '35px', height: '35px' }}>
         <Icon path={mdiAccount} size={0.8} className="text-dark" />
@@ -65,6 +70,7 @@ export default function Dashboard() {
   const [showTripCard, setShowTripCard] = useState(false);
   const [driverLocation, setDriverLocation] = useState([18.8568, -98.7993]); // Mock inicial
   const [recentRatings, setRecentRatings] = useState([]);
+  const [driverRating, setDriverRating] = useState(user?.rating || null);
 
   // Refs para romper ciclos de dependencia en useEffect
   const currentTripRef = useRef(currentTrip);
@@ -75,29 +81,46 @@ export default function Dashboard() {
     tripStateRef.current = tripState;
   }, [currentTrip, tripState]);
 
+  useEffect(() => {
+    if (user?.rating) {
+      setDriverRating(user.rating);
+    }
+  }, [user]);
+
   // Obtener historial y calificaciones
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        // Fetch driver history using userId (or driverProfileId if available in context)
-        // Assuming the service handles userId -> driverProfile lookup or we send user.id
-        // Note: TripService.getDriverHistory expects driverId (profile ID).
-        // If we don't have profile ID in user context, we might need an endpoint to get it or assume user.id mapping
-        // For now, let's try with user.id or driverProfileId if it exists.
         const profileId = user.driverProfileId || user.id; 
-        const response = await TripService.getDriverHistory(profileId);
+        // Fetch ratings specifically
+        const ratingsResponse = await RatingService.getDriverRatings(profileId);
+        console.log('Driver Ratings Response:', ratingsResponse);
         
-        if (response && response.data && response.data.trips) {
-          // Filter completed trips with ratings
-          const ratedTrips = response.data.trips
-            .filter(t => t.status === 'COMPLETED' && t.rating > 0)
-            .slice(0, 3) // Get top 3 recent
-            .map(t => ({
-              id: t.id,
-              passengerName: t.clientName || 'Pasajero',
-              rating: t.rating
-            }));
-          setRecentRatings(ratedTrips);
+        if (ratingsResponse && ratingsResponse.data) {
+          const { average, ratings } = ratingsResponse.data;
+          
+          if (average) {
+             const formattedRating = parseFloat(average).toFixed(1);
+             setDriverRating(formattedRating);
+             // Optional: update user object if needed for other components, though context refresh is better
+             user.rating = formattedRating; 
+          }
+
+          if (ratings && ratings.length > 0) {
+             // Sort by createdAt desc
+             const sortedRatings = ratings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+             
+             // Map to UI format
+             const uiRatings = sortedRatings.slice(0, 3).map(r => ({
+                 id: r.id,
+                 tripId: r.tripId,
+                 passengerName: r.raterName || 'Pasajero',
+                 rating: r.rating
+             }));
+             setRecentRatings(uiRatings);
+          } else {
+             setRecentRatings([]);
+          }
         }
       } catch (error) {
         console.error('Error fetching history:', error);
@@ -270,6 +293,25 @@ export default function Dashboard() {
       setCurrentTrip(null);
   };
 
+  const handleRatePassenger = async (rating) => {
+    if (!currentTrip) return;
+    try {
+      // Driver profile ID is usually user.driverProfileId or derived from user.id
+      const driverId = user.driverProfileId || user.id; 
+      await RatingService.rateClient(driverId, {
+        tripId: currentTrip.tripId,
+        rating: rating,
+        comment: '' // Optional comment
+      });
+      toast.current?.show({ severity: 'success', summary: 'Calificado', detail: 'Calificación enviada exitosamente.' });
+      handleCloseFinished();
+    } catch (error) {
+      console.error('Error rating passenger:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar la calificación.' });
+      // Still close on error? Maybe let them retry.
+    }
+  };
+
   // Props para las tarjetas
   const cardProps = {
       tripState,
@@ -281,6 +323,7 @@ export default function Dashboard() {
       onArriveDropoff: handleArriveDropoff,
       onCompleteTrip: handleCompleteTrip,
       onClose: handleCloseFinished,
+      onRate: handleRatePassenger,
       onHide: () => setShowTripCard(false)
   };
 
@@ -360,7 +403,14 @@ export default function Dashboard() {
 
               <div className="d-flex flex-column">
                 {recentRatings.length > 0 ? (
-                  recentRatings.map((rating) => <RatingItem key={rating.id} passengerName={rating.passengerName} rating={rating.rating} />)
+                  recentRatings.map((rating) => (
+                    <RatingItem 
+                        key={rating.id} 
+                        passengerName={rating.passengerName} 
+                        rating={rating.rating} 
+                        onClick={() => navigate('/d/trips', { state: { openTripId: rating.tripId } })}
+                    />
+                  ))
                 ) : (
                   <div className="text-center text-muted py-4">
                     <p className="mb-0">No hay calificaciones recientes</p>
@@ -378,7 +428,7 @@ export default function Dashboard() {
               <h4 className="fw-bold w-100 text-start mb-3">Mi calificación</h4>
 
               <div className="d-flex align-items-center gap-2 mb-2">
-                <Avatar image={user?.avatar || user?.avatarUrl || "https://primefaces.org/cdn/primereact/images/avatar/xuxuefeng.png"} size="large" shape="circle" className="p-overlay-badge flex-shrink-0" style={{ width: '50px', height: '50px' }} />
+                <Avatar image={user.avatar} icon={!user.avatar ? 'pi pi-user' : null} shape="circle" className="bg-warning text-white" style={{ width: '50px', height: '50px', flexShrink: 0 }} />
                 <span className="fs-4 fw-normal">
                   {user?.name} {user?.paternalSurname} {user?.maternalSurname || '?'}
                 </span>
@@ -388,9 +438,15 @@ export default function Dashboard() {
 
               <div className="d-flex align-items-center gap-2 mb-2">
                 <Icon path={mdiStar} size={2.5} style={{ color: 'var(--color-teal-tint-1)' }} />
-                <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
-                  {user?.rating || '5.0'}
-                </span>
+                {driverRating && driverRating !== '0.0' ? (
+                  <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
+                    {driverRating}
+                  </span>
+                ) : (
+                  <span className="fw-bold text-muted" style={{ fontSize: '1.5rem' }}>
+                    Sin calificaciones
+                  </span>
+                )}
               </div>
 
               <a href="#" className="text-muted text-decoration-none small mt-auto">

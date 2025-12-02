@@ -10,12 +10,13 @@ import Icon from '@mdi/react';
 import { mdiMagnify, mdiFileDocumentOutline, mdiOpenInNew, mdiAlertCircleOutline } from '@mdi/js';
 import DataTable from '../components/DataTable';
 import { UserService } from '../../../api/user/user.service';
-import { getDriverFullInfo, openDocumentInNewTab, getDocumentTypeLabel } from '../../../api/driver/driver.service';
+import { DriverService, openDocumentInNewTab, getDocumentTypeLabel } from '../../../api/driver/driver.service';
+import { useAuth } from '../../../contexts/AuthContext';
 
 // Admin users management view
 export default function Users() {
   const toast = useRef(null);
-  
+  const { user: currentUser } = useAuth();
   // State for users and filters
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,10 @@ export default function Users() {
   // Edit dialog state
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Vehicle View Dialog
+  const [showVehicleDialog, setShowVehicleDialog] = useState(false);
 
   // Documents dialog state
   const [showDocsDialog, setShowDocsDialog] = useState(false);
@@ -37,13 +42,18 @@ export default function Users() {
     try {
       const response = await UserService.getAllUsers();
       if (response && response.data) {
-        const transformedUsers = response.data.map((user) => ({
-          ...user,
-          originalName: user.name,
-          name: `${user.name} ${user.surname} ${user.lastname || ''}`.trim(),
-          type: user.role ? user.role.name.charAt(0).toUpperCase() + user.role.name.slice(1).toLowerCase() : 'Desconocido',
-          status: user.status,
-        }));
+        // Transform data for UI compatibility
+        const transformedUsers = response.data
+          .filter((user) => user.id !== currentUser?.id) // Filter out current user
+          .map((user) => ({
+            ...user,
+            // Store original fields for editing
+            originalName: user.name,
+            // Create display fields for DataTable
+            name: `${user.name} ${user.surname} ${user.lastname || ''}`.trim(),
+            type: user.role ? user.role.name.charAt(0).toUpperCase() + user.role.name.slice(1).toLowerCase() : 'Desconocido',
+            status: user.status, // Pass boolean directly for StatusBadge to handle
+          }));
         setUsers(transformedUsers);
       } else {
         setUsers([]);
@@ -58,6 +68,7 @@ export default function Users() {
 
   useEffect(() => {
     fetchUsers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter users based on search term
@@ -79,13 +90,101 @@ export default function Users() {
   };
 
   // Handle edit user
-  const handleEdit = (user) => {
-    setSelectedUser({
-      ...user,
-      name: user.originalName,
-      type: user.role ? user.role.name.toUpperCase() : 'CLIENTE',
-    });
-    setShowEditDialog(true);
+  const handleEdit = async (user) => {
+    setCurrentStep(1);
+    
+    if (user.type === 'Conductor' || user.type === 'CONDUCTOR') {
+      setLoading(true);
+      try {
+        const data = await DriverService.getDriverFullInfo(user.id);
+        // Ensure we handle missing data gracefully
+        const vehicle = data.vehicles && data.vehicles.length > 0 ? data.vehicles[0] : {};
+        const profile = data.driverProfile || {};
+        
+        setSelectedUser({
+          ...user,
+          name: user.originalName,
+          type: 'CONDUCTOR',
+          // Driver fields
+          driverProfileId: profile.driverProfileId,
+          licenseNumber: profile.licenseNumber || '',
+          vehicleId: vehicle.id,
+          vehicleBrand: vehicle.brand || '',
+          vehicleModel: vehicle.model || '',
+          vehicleYear: vehicle.year || '',
+          vehiclePlate: vehicle.plate || '',
+          vehicleColor: vehicle.color || '',
+        });
+        setShowEditDialog(true);
+      } catch (error) {
+        console.error('Error fetching driver details:', error);
+        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los detalles del conductor' });
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setSelectedUser({
+        ...user,
+        name: user.originalName,
+        type: user.role ? user.role.name.toUpperCase() : 'CLIENTE',
+      });
+      setShowEditDialog(true);
+    }
+  };
+
+  // Handle View PDF
+  const handleViewPdf = async (user) => {
+    setLoading(true);
+    try {
+      const data = await DriverService.getDriverFullInfo(user.id);
+      console.log('Driver Data for PDF:', data); // Debug log
+      const doc = data.documents && data.documents.length > 0 ? data.documents[0] : null;
+      
+      if (doc && doc.id) {
+        const blob = await DriverService.downloadDocument(doc.id);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        
+        // Optional: Clean up URL after some time if needed, but for _blank it's tricky.
+        // Usually browser handles it or we let GC handle it eventually on reload.
+      } else {
+        toast.current?.show({ severity: 'warn', summary: 'Sin documento', detail: 'El conductor no tiene documentos registrados.' });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo obtener el documento' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle View Vehicle (Read Only)
+  const handleViewVehicle = async (user) => {
+    setLoading(true);
+    try {
+      const data = await DriverService.getDriverFullInfo(user.id);
+      console.log('Full Driver Info (Vehicle View):', data); // Debug log requested by user
+
+      const vehicle = data.vehicles && data.vehicles.length > 0 ? data.vehicles[0] : {};
+      const profile = data.driverProfile || {};
+      
+      setSelectedUser({
+        ...user,
+        name: user.originalName,
+        licenseNumber: profile.licenseNumber || 'N/A',
+        vehicleBrand: vehicle.brand || 'N/A',
+        vehicleModel: vehicle.model || 'N/A',
+        vehicleYear: vehicle.year || 'N/A',
+        vehiclePlate: vehicle.plate || 'N/A',
+        vehicleColor: vehicle.color || 'N/A',
+      });
+      setShowVehicleDialog(true);
+    } catch (error) {
+      console.error(error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los datos del vehículo' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle toggle user status
@@ -115,7 +214,7 @@ export default function Users() {
     setSelectedDriverInfo(null);
 
     try {
-      const data = await getDriverFullInfo(user.id);
+      const data = await DriverService.getDriverFullInfo(user.id);
       setSelectedDriverInfo({
         user: data.user,
         driverProfile: data.driverProfile,
@@ -145,21 +244,48 @@ export default function Users() {
   // Handle save user changes
   const handleSaveUser = async () => {
     try {
+      // Construct user payload
       let roleObj = selectedUser.role;
       if (selectedUser.type === 'ADMIN') roleObj = { id: 1, name: 'ADMIN' };
       else if (selectedUser.type === 'CLIENTE') roleObj = { id: 2, name: 'CLIENTE' };
       else if (selectedUser.type === 'CONDUCTOR') roleObj = { id: 3, name: 'CONDUCTOR' };
 
-      const payload = {
+      const userPayload = {
         ...selectedUser,
         name: selectedUser.name,
         role: roleObj,
       };
 
-      delete payload.originalName;
-      delete payload.statusStr;
+      // Clean up aux fields for User payload
+      delete userPayload.originalName;
+      delete userPayload.statusStr;
+      delete userPayload.driverProfileId;
+      delete userPayload.licenseNumber;
+      delete userPayload.vehicleId;
+      delete userPayload.vehicleBrand;
+      delete userPayload.vehicleModel;
+      delete userPayload.vehicleYear;
+      delete userPayload.vehiclePlate;
+      delete userPayload.vehicleColor;
 
-      await UserService.updateUser(payload);
+      await UserService.updateUser(userPayload);
+
+      // Update Driver Info if applicable
+      if (selectedUser.type === 'CONDUCTOR') {
+        if (selectedUser.driverProfileId) {
+          await DriverService.updateDriverLicense(selectedUser.driverProfileId, selectedUser.licenseNumber);
+        }
+        if (selectedUser.vehicleId) {
+          await DriverService.updateVehicle(selectedUser.vehicleId, {
+             brand: selectedUser.vehicleBrand,
+             model: selectedUser.vehicleModel,
+             year: selectedUser.vehicleYear,
+             plate: selectedUser.vehiclePlate,
+             color: selectedUser.vehicleColor,
+             active: true
+          });
+        }
+      }
 
       toast.current?.show({ severity: 'success', summary: 'Éxito', detail: 'Usuario actualizado correctamente' });
       setShowEditDialog(false);
@@ -331,7 +457,7 @@ export default function Users() {
 
       {/* Users List Section */}
       <div className="mb-3">
-        {loading ? (
+        {loading && !showEditDialog && !showVehicleDialog ? (
           <div className="d-flex justify-content-center py-5">
             <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="4" />
           </div>
@@ -341,6 +467,8 @@ export default function Users() {
             onEdit={handleEdit} 
             onToggleStatus={handleToggleStatus}
             onViewDocuments={handleViewDocuments}
+            onViewPdf={handleViewPdf}
+            onViewVehicle={handleViewVehicle}
           />
         )}
       </div>
@@ -362,6 +490,15 @@ export default function Users() {
       >
         {selectedUser && (
           <div className="d-flex flex-column gap-3">
+            {/* Step Indicators for Conductor */}
+            {selectedUser.type === 'CONDUCTOR' && (
+               <div className="d-flex justify-content-center gap-2 mb-3">
+                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: currentStep === 1 ? 'var(--color-lime-shade-2)' : '#dee2e6', transition: 'background-color 0.3s' }} />
+                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: currentStep === 2 ? 'var(--color-lime-shade-2)' : '#dee2e6', transition: 'background-color 0.3s' }} />
+               </div>
+            )}
+
+            {currentStep === 1 && (
             <div className="row g-3">
               <div className="col-12 col-md-6">
                 <label className="form-label small fw-semibold text-secondary">Nombre</label>
@@ -440,22 +577,66 @@ export default function Users() {
                 />
               </div>
             </div>
+            )}
 
-            <div className="d-flex flex-column flex-sm-row justify-content-end gap-2 pt-3">
-              <Button
-                label="Cancelar"
-                className="p-button-outlined fw-bold w-100 w-sm-auto order-2 order-sm-1"
-                style={{
-                  color: 'var(--color-secondary)',
-                  borderColor: 'var(--color-secondary)',
-                }}
-                onClick={() => setShowEditDialog(false)}
-              />
-              <Button 
-                label="Guardar" 
-                className="btn-lime w-100 w-sm-auto order-1 order-sm-2" 
-                onClick={handleSaveUser} 
-              />
+            {currentStep === 2 && selectedUser.type === 'CONDUCTOR' && (
+              <div className="row g-3">
+                 <div className="col-12">
+                      <h6 className="fw-bold text-secondary mb-3 border-bottom pb-2">Información de Conductor</h6>
+                 </div>
+                 <div className="col-12 col-md-6">
+                    <label className="form-label small fw-semibold text-secondary">No. Licencia</label>
+                    <InputText value={selectedUser.licenseNumber} onChange={(e) => setSelectedUser(prev => ({ ...prev, licenseNumber: e.target.value }))} className="w-100" />
+                 </div>
+
+                 <div className="col-12 mt-4">
+                      <h6 className="fw-bold text-secondary mb-3 border-bottom pb-2">Datos del Vehículo</h6>
+                 </div>
+
+                 <div className="col-12 col-md-6">
+                    <label className="form-label small fw-semibold text-secondary">Marca</label>
+                    <InputText value={selectedUser.vehicleBrand} onChange={(e) => setSelectedUser(prev => ({ ...prev, vehicleBrand: e.target.value }))} className="w-100" />
+                 </div>
+                 <div className="col-12 col-md-6">
+                    <label className="form-label small fw-semibold text-secondary">Modelo</label>
+                    <InputText value={selectedUser.vehicleModel} onChange={(e) => setSelectedUser(prev => ({ ...prev, vehicleModel: e.target.value }))} className="w-100" />
+                 </div>
+                 <div className="col-12 col-md-4">
+                    <label className="form-label small fw-semibold text-secondary">Año</label>
+                    <InputText value={selectedUser.vehicleYear} onChange={(e) => setSelectedUser(prev => ({ ...prev, vehicleYear: e.target.value }))} className="w-100" type="number" />
+                 </div>
+                 <div className="col-12 col-md-4">
+                    <label className="form-label small fw-semibold text-secondary">Placa</label>
+                    <InputText value={selectedUser.vehiclePlate} onChange={(e) => setSelectedUser(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))} className="w-100" />
+                 </div>
+                 <div className="col-12 col-md-4">
+                    <label className="form-label small fw-semibold text-secondary">Color</label>
+                    <InputText value={selectedUser.vehicleColor} onChange={(e) => setSelectedUser(prev => ({ ...prev, vehicleColor: e.target.value }))} className="w-100" />
+                 </div>
+              </div>
+            )}
+
+            {/* Responsive footer buttons */}
+            <div className="d-flex flex-column flex-sm-row justify-content-between gap-2 pt-3 border-top mt-2">
+              {currentStep === 2 ? (
+                 <Button label="Atrás" className="p-button-outlined p-button-secondary w-100 w-sm-auto order-2" onClick={() => setCurrentStep(1)} />
+              ) : (
+                 <div className="w-100 w-sm-auto order-2"></div> // Spacer
+              )}
+
+              <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto order-1">
+                <Button
+                  label="Cancelar"
+                  className="p-button-outlined fw-bold w-100 w-sm-auto"
+                  style={{ color: 'var(--color-secondary)', borderColor: 'var(--color-secondary)' }}
+                  onClick={() => setShowEditDialog(false)}
+                />
+                {selectedUser.type === 'CONDUCTOR' && currentStep === 1 ? (
+                  <Button label="Siguiente" className="btn-lime w-100 w-sm-auto" onClick={() => setCurrentStep(2)} />
+                ) : (
+                  <Button label="Guardar" className="btn-lime w-100 w-sm-auto" onClick={handleSaveUser} />
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -490,6 +671,59 @@ export default function Users() {
         }
       >
         {renderDocsDialogContent()}
+      </Dialog>
+      
+      {/* Vehicle Data Dialog (Read Only) */}
+      <Dialog
+        header="Datos del Vehículo"
+        visible={showVehicleDialog}
+        onHide={() => setShowVehicleDialog(false)}
+        style={{ width: '95vw', maxWidth: '500px' }}
+        breakpoints={{ '768px': '95vw' }}
+        draggable={false}
+        resizable={false}
+        modal
+        className="border-0 shadow"
+        headerClassName="border-0 pb-0 fw-bold"
+        contentClassName="pt-4"
+      >
+         {selectedUser && (
+           <div className="d-flex flex-column gap-3">
+             <div className="mb-3">
+               <label className="fw-bold d-block text-secondary">Licencia</label>
+               <span className="fs-5">{selectedUser.licenseNumber}</span>
+             </div>
+             
+             <h6 className="fw-bold text-secondary border-bottom pb-2">Vehículo</h6>
+             
+             <div className="row g-3">
+               <div className="col-6">
+                 <label className="small text-secondary">Marca</label>
+                 <div className="fw-semibold">{selectedUser.vehicleBrand}</div>
+               </div>
+               <div className="col-6">
+                 <label className="small text-secondary">Modelo</label>
+                 <div className="fw-semibold">{selectedUser.vehicleModel}</div>
+               </div>
+               <div className="col-4">
+                 <label className="small text-secondary">Año</label>
+                 <div className="fw-semibold">{selectedUser.vehicleYear}</div>
+               </div>
+               <div className="col-4">
+                 <label className="small text-secondary">Placa</label>
+                 <div className="fw-semibold">{selectedUser.vehiclePlate}</div>
+               </div>
+               <div className="col-4">
+                 <label className="small text-secondary">Color</label>
+                 <div className="fw-semibold">{selectedUser.vehicleColor}</div>
+               </div>
+             </div>
+
+             <div className="d-flex justify-content-end pt-3">
+               <Button label="Cerrar" className="p-button-secondary" onClick={() => setShowVehicleDialog(false)} />
+             </div>
+           </div>
+         )}
       </Dialog>
     </div>
   );

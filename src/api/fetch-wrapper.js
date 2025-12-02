@@ -27,7 +27,7 @@ const shouldRetry = (status, attempt, maxRetries) => {
   return attempt < maxRetries && RETRY_CONFIG.retryStatuses.includes(status);
 };
 
-export default async function request(endpoint, { method = 'GET', body = null, headers = {}, signal, isMultipart = false, skipRetry = false } = {}) {
+export default async function request(endpoint, { method = 'GET', body = null, headers = {}, signal, isMultipart = false, skipRetry = false, responseType = 'json' } = {}) {
   const url = `${BASE_URL}${endpoint}`;
   const token = localStorage.getItem('token');
 
@@ -51,6 +51,18 @@ export default async function request(endpoint, { method = 'GET', body = null, h
   while (attempt <= RETRY_CONFIG.maxRetries) {
     try {
       const res = await fetch(url, opts);
+
+      if (responseType === 'blob') {
+        if (!res.ok) {
+            // If error, try to read as text/json to get error message if possible
+            const text = await res.text();
+            let errMsg;
+            try { errMsg = JSON.parse(text).message; } catch { errMsg = text; }
+            throw new Error(errMsg || res.statusText);
+        }
+        return await res.blob();
+      }
+
       const text = await res.text();
       let data;
 

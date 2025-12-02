@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useWebSocket } from '../../../hooks/useWebSocket';
 import * as TripService from '../../../api/trip/trip.service';
+import * as RatingService from '../../../api/rating/rating.service';
 import Icon from '@mdi/react';
 import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiStar } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
@@ -31,6 +32,27 @@ const ToolButton = ({ icon, label, onClick }) => (
         {label}
       </span>
     </button>
+  </div>
+);
+
+const RecentTripItem = ({ destination, date, onClick }) => (
+  <div 
+      className="d-flex align-items-center justify-content-between py-2 bg-light hoverable px-3 rounded-5 transition-all mb-2 cursor-pointer w-100"
+      onClick={onClick}
+      style={{ cursor: 'pointer' }}
+  >
+      <div className="d-flex align-items-center gap-3 overflow-hidden">
+          <div className="rounded-circle border d-flex align-items-center justify-content-center flex-shrink-0 bg-white" style={{ width: '35px', height: '35px' }}>
+              <Icon path={mdiHistory} size={0.8} className="text-dark" />
+          </div>
+          <div className="d-flex flex-column overflow-hidden w-100">
+              <p className="mb-0 text-truncate w-100">{destination}</p>
+              <small className="text-muted">{date}</small>
+          </div>
+      </div>
+      <div className="flex-shrink-0 ms-2">
+           <i className="pi pi-chevron-right text-secondary" style={{ fontSize: '0.9rem' }}></i>
+      </div>
   </div>
 );
 
@@ -65,6 +87,7 @@ export default function LandingPage() {
   
   // Historial reciente
   const [lastCompletedTrip, setLastCompletedTrip] = useState(null);
+  const [passengerRating, setPassengerRating] = useState(user?.rating || null);
   
   const mapRef = useRef(null);
 
@@ -77,29 +100,87 @@ export default function LandingPage() {
     currentTripRef.current = currentTrip;
   }, [tripState, currentTrip]);
 
-  // Cargar última actividad (viaje completado)
+  // Handle Reschedule Action from TripHistory
   useEffect(() => {
-      const fetchLastActivity = async () => {
+    if (location.state?.action === 'reschedule') {
+      const { origin, destination } = location.state;
+
+      if (origin && destination) {
+        setOriginValue(origin.name);
+        setOriginCoords([origin.lat, origin.lng]);
+
+        setDestinationValue(destination.name);
+        setDestinationCoords([destination.lat, destination.lng]);
+
+        setShowTripCard(true);
+        setSelectionMode('none');
+        setTripState('request');
+
+        // Clear state to prevent re-run
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (user?.rating) {
+      setPassengerRating(user.rating);
+    }
+  }, [user]);
+
+  // Cargar última actividad (viaje completado) y calificaciones
+  const [recentTrips, setRecentTrips] = useState([]);
+
+  useEffect(() => {
+      const fetchDashboardData = async () => {
           if (!user) return;
           try {
-              const response = await TripService.getClientHistory(user.id);
-              if (response && response.data && response.data.length > 0) {
-                  // Filter completed only and get latest
-                  const completed = response.data
+              // 1. Last Activity (Fetch last 3 completed trips)
+              const historyResponse = await TripService.getClientHistory(user.id);
+              if (historyResponse && historyResponse.data && historyResponse.data.length > 0) {
+                  const completed = historyResponse.data
                     .filter(t => t.status === 'COMPLETED')
-                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                    .sort((a, b) => {
+                        const dateA = new Date(a.createdAt || a.updatedAt || 0);
+                        const dateB = new Date(b.createdAt || b.updatedAt || 0);
+                        return dateB - dateA;
+                    })
+                    .slice(0, 3); // Get top 3
                   
+                  setRecentTrips(completed);
+                  
+                  // Keep setting lastCompletedTrip for backward compatibility if needed elsewhere, 
+                  // or just use the first one for the "main" recent activity if design requires one.
+                  // The request asks to "show more trips", so we likely iterate over `recentTrips`.
                   if (completed.length > 0) {
                       setLastCompletedTrip(completed[0]);
                   }
               }
+
+              // 2. User Rating
+              const ratingsResponse = await RatingService.getClientRatings(user.id);
+              console.log('Passenger Ratings Response:', ratingsResponse);
+              if (ratingsResponse && ratingsResponse.data && ratingsResponse.data.average) {
+                  const formatted = parseFloat(ratingsResponse.data.average).toFixed(1);
+                  setPassengerRating(formatted);
+              }
           } catch (error) {
-              console.error("Error fetching last activity", error);
+              console.error("Error fetching dashboard data", error);
           }
       };
       
-      fetchLastActivity();
-  }, [user, tripState]); // Refresh when trip state changes (e.g. finishes)
+      fetchDashboardData();
+  }, [user, tripState]);
+
+  // Helper to format date safely
+  const formatDate = (dateString) => {
+      if (!dateString) return '';
+      try {
+          return new Date(dateString).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+      } catch (e) {
+          return '';
+      }
+  };
 
   // --- Lógica de Ubicación ---
   const getLocation = () => {
@@ -307,6 +388,22 @@ export default function LandingPage() {
     setTempMarker(null);
   };
 
+  const handleRateDriver = async (rating) => {
+    if (!currentTrip) return;
+    try {
+      await RatingService.rateDriver(user.id, {
+        tripId: currentTrip.id || currentTrip.tripId, // Check ID field name compatibility
+        rating: rating,
+        comment: ''
+      });
+      toast.current?.show({ severity: 'success', summary: 'Calificado', detail: 'Calificación enviada exitosamente.' });
+      handleResetTrip();
+    } catch (error) {
+      console.error('Error rating driver:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar la calificación.' });
+    }
+  };
+
   // --- Helpers Mapa ---
   const mockReverseGeocode = (lat, lng) => {
     const streets = ['Av. Universidad Tecnológica', 'Calle 5 de Mayo', 'Blvd. Emiliano Zapata', 'Calle Reforma', 'Av. Constitución', 'Privada de los Pinos', 'Camino Real', 'Calle Niños Héroes'];
@@ -415,6 +512,7 @@ export default function LandingPage() {
     onConfirmPickup: handleConfirmPickup,
     onConfirmDropoff: handleConfirmDropoff,
     isFormValid,
+    onRate: handleRateDriver,
     onHide: () => setShowTripCard(false), // Solo para móvil a veces se usa ocultar
   };
 
@@ -510,21 +608,15 @@ export default function LandingPage() {
             <div className="card-body p-3">
               <h4 className="fw-bold mb-3">Actividad reciente</h4>
               <div className="d-flex flex-column">
-                {lastCompletedTrip ? (
-                    <div 
-                        className="d-flex align-items-center gap-3 p-2 hoverable rounded cursor-pointer"
-                        onClick={() => navigate('/p/trips', { state: { openTripId: lastCompletedTrip.id } })}
-                        style={{ cursor: 'pointer' }}
-                    >
-                        <div className="rounded-circle bg-light d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
-                            <Icon path={mdiHistory} size={0.8} className="text-dark" />
-                        </div>
-                        <div className="overflow-hidden">
-                            <p className="fw-bold mb-0 text-truncate">{lastCompletedTrip.destinationAddress || lastCompletedTrip.destination}</p>
-                            <small className="text-muted">{new Date(lastCompletedTrip.updatedAt).toLocaleDateString()}</small>
-                        </div>
-                        <Icon path={mdiMessageText} size={0.8} className="ms-auto text-secondary opacity-50" />
-                    </div>
+                {recentTrips.length > 0 ? (
+                  recentTrips.map((trip) => (
+                    <RecentTripItem 
+                        key={trip.id}
+                        destination={trip.destinationAddress || trip.destination}
+                        date={formatDate(trip.createdAt || trip.updatedAt)}
+                        onClick={() => navigate('/p/trips', { state: { openTripId: trip.id } })}
+                    />
+                  ))
                 ) : (
                     <p className="text-muted small mb-0 text-center">No hay actividad reciente.</p>
                 )}
@@ -538,16 +630,22 @@ export default function LandingPage() {
             <div className="card-body p-3 d-flex flex-column align-items-center justify-content-center text-center">
               <h4 className="fw-bold w-100 text-start mb-3">Mi calificación</h4>
               <div className="d-flex align-items-center gap-2 mb-2">
-                <Avatar image={user?.avatar || user?.avatarUrl || "https://primefaces.org/cdn/primereact/images/avatar/xuxuefeng.png"} size="large" shape="circle" className="p-overlay-badge flex-shrink-0" style={{ width: '50px', height: '50px' }} />
+                <Avatar image={user.avatar} icon={!user.avatar ? 'pi pi-user' : null} shape="circle" className="bg-warning text-white" style={{ width: '50px', height: '50px', flexShrink: 0 }} />
                 <span className="fs-4 fw-normal">
                   {user?.name} {user?.paternalSurname} {user?.maternalSurname || '?'}
                 </span>
               </div>
               <div className="d-flex align-items-center gap-2 mb-2">
                 <Icon path={mdiStar} size={2.5} style={{ color: 'var(--color-teal-tint-1)' }} />
-                <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
-                  {user?.rating || '5.0'}
-                </span>
+                {passengerRating && passengerRating !== '0.0' ? (
+                  <span className="fw-bold" style={{ fontSize: '2.5rem', color: 'var(--color-teal-tint-1)' }}>
+                    {passengerRating}
+                  </span>
+                ) : (
+                  <span className="fw-bold text-muted" style={{ fontSize: '1.5rem' }}>
+                    Sin calificaciones
+                  </span>
+                )}
               </div>
               <a href="#" className="text-muted text-decoration-none small mt-auto">Conoce el por qué de tu calificación</a>
             </div>

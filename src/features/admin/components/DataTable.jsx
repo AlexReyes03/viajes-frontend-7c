@@ -3,19 +3,19 @@ import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import Icon from '@mdi/react';
-import { mdiPencilOutline, mdiSwapHorizontal, mdiFileDocumentOutline } from '@mdi/js';
+import { mdiPencilOutline, mdiSwapHorizontal, mdiFileDocumentOutline, mdiFilePdfBox, mdiCar } from '@mdi/js';
 import StatusBadge from './StatusBadge';
 
 // Data table component using PrimeReact with responsive actions
-export default function DataTableComponent({ data, onEdit, onToggleStatus, onViewDocuments }) {
+export default function DataTableComponent({ data, onEdit, onToggleStatus, onViewDocuments, onViewPdf, onViewVehicle }) {
   // Check if user is a driver based on role
   const isDriver = (rowData) => {
     const roleName = rowData.role?.name?.toUpperCase() || rowData.type?.toUpperCase() || '';
-    return roleName === 'CONDUCTOR';
+    return roleName === 'CONDUCTOR' || rowData.type === 'Conductor';
   };
 
   const actionBodyTemplate = (rowData) => {
-    const showDocsButton = isDriver(rowData);
+    const showDriverButtons = isDriver(rowData);
 
     return (
       <div className="d-flex justify-content-center align-items-center gap-2" style={{ minWidth: '130px' }}>
@@ -45,23 +45,54 @@ export default function DataTableComponent({ data, onEdit, onToggleStatus, onVie
           tooltip="Cambiar estado"
           tooltipOptions={{ position: 'top' }}
         />
-        {/* Documents button only for drivers - placeholder keeps alignment */}
-        {showDocsButton ? (
-          <Button
-            icon={<Icon path={mdiFileDocumentOutline} size={0.9} />}
-            className="p-button-outlined"
-            style={{
-              width: '36px',
-              height: '36px',
-              borderColor: 'var(--color-lime-shade-1)',
-              color: 'var(--color-lime-shade-1)',
-            }}
-            onClick={() => onViewDocuments && onViewDocuments(rowData)}
-            tooltip="Ver documentos"
-            tooltipOptions={{ position: 'top' }}
-          />
-        ) : (
-          <div style={{ width: '36px', height: '36px' }} />
+        {/* Driver-specific buttons */}
+        {showDriverButtons && (
+          <>
+            {/* Documents button - from HEAD branch */}
+            {onViewDocuments && (
+              <Button
+                icon={<Icon path={mdiFileDocumentOutline} size={0.9} />}
+                className="p-button-outlined"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderColor: 'var(--color-lime-shade-1)',
+                  color: 'var(--color-lime-shade-1)',
+                }}
+                onClick={() => onViewDocuments(rowData)}
+                tooltip="Ver documentos"
+                tooltipOptions={{ position: 'top' }}
+              />
+            )}
+            {/* PDF button - from main branch */}
+            {onViewPdf && (
+              <Button
+                icon={<Icon path={mdiFilePdfBox} size={0.9} />}
+                className="p-button-outlined p-button-secondary"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                }}
+                onClick={() => onViewPdf(rowData)}
+                tooltip="Ver PDF"
+                tooltipOptions={{ position: 'top' }}
+              />
+            )}
+            {/* Vehicle button - from main branch */}
+            {onViewVehicle && (
+              <Button
+                icon={<Icon path={mdiCar} size={0.9} />}
+                className="p-button-outlined p-button-help"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                }}
+                onClick={() => onViewVehicle(rowData)}
+                tooltip="Datos del vehículo"
+                tooltipOptions={{ position: 'top' }}
+              />
+            )}
+          </>
         )}
       </div>
     );
@@ -104,7 +135,7 @@ export default function DataTableComponent({ data, onEdit, onToggleStatus, onVie
           <Column 
             header="Acciones" 
             body={actionBodyTemplate} 
-            style={{ minWidth: '160px', textAlign: 'center' }} 
+            style={{ minWidth: '220px', textAlign: 'center' }} 
           />
         </DataTable>
       </div>

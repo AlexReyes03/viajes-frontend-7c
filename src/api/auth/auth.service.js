@@ -49,6 +49,7 @@ export const changePassword = async (currentPassword, newPassword) => {
       currentPassword: sanitizedCurrentPassword,
       newPassword: sanitizedNewPassword,
     },
+    skipRetry: true,
   });
 
   return payload;

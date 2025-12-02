@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from 'primereact/button';
 import { useNavigate } from 'react-router-dom';
 import { InputSwitch } from 'primereact/inputswitch';
-import { FileUpload } from 'primereact/fileupload';
+import { Toast } from 'primereact/toast';
+import Icon from '@mdi/react';
+import { mdiFileUpload, mdiFilePdfBox, mdiCloseCircle } from '@mdi/js';
 import PasswordInput from '../components/PasswordInput';
 import { register, completeDriverRegistration } from '../../../api/auth/auth.service';
-import { Toast } from 'primereact/toast';
 
 export default function RegisterForm() {
   const navigate = useNavigate();
-  const toast = React.useRef(null);
+  const toast = useRef(null);
+  const fileInputRef = useRef(null);
+
   const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+
   const [formData, setFormData] = useState({
     nombre: '',
     apPaterno: '',
@@ -28,49 +33,85 @@ export default function RegisterForm() {
     vehicleYear: '',
     vehiclePlate: '',
     vehicleColor: '',
-    driverDocument: null // File object
+    driverDocument: null, // File object
   });
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleFileClick = () => {
+    // If file exists, clear it
+    if (formData.driverDocument) {
+      setFormData((prev) => ({ ...prev, driverDocument: null }));
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } else {
+      // Trigger file selection
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.current.show({ severity: 'error', summary: 'Error', detail: 'Solo se permiten archivos PDF' });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.current.show({ severity: 'error', summary: 'Error', detail: 'El archivo excede los 5MB' });
+        return;
+      }
+      setFormData((prev) => ({ ...prev, driverDocument: file }));
+    }
+  };
+
+  const validateStep1 = () => {
+    if (!formData.nombre || !formData.apPaterno || !formData.telefono || !formData.usuario || !formData.email || !formData.pass || !formData.confirmPass) {
+      toast.current.show({ severity: 'warn', summary: 'Campos requeridos', detail: 'Por favor completa todos los campos obligatorios marcados con *' });
+      return false;
+    }
+    if (formData.pass !== formData.confirmPass) {
+      toast.current.show({ severity: 'error', summary: 'Error', detail: 'Las contraseñas no coinciden' });
+      return false;
+    }
+    if (!/^\d{10}$/.test(formData.telefono)) {
+      toast.current.show({ severity: 'warn', summary: 'Teléfono inválido', detail: 'El teléfono debe tener 10 dígitos' });
+      return false;
+    }
+    return true;
+  };
+
+  const validateStep2 = () => {
+    if (!formData.licenseNumber || !formData.vehicleBrand || !formData.vehicleModel || !formData.vehicleYear || !formData.vehiclePlate || !formData.vehicleColor) {
+      toast.current.show({ severity: 'warn', summary: 'Campos requeridos', detail: 'Por favor completa todos los datos del vehículo' });
+      return false;
+    }
+    if (!formData.driverDocument) {
+      toast.current.show({ severity: 'warn', summary: 'Documento requerido', detail: 'Debes subir la constancia de no antecedentes penales' });
+      return false;
+    }
+    return true;
+  };
+
+  const handleContinue = () => {
+    if (validateStep1()) {
+      setCurrentStep(2);
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(1);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate passwords match
-    if (formData.pass !== formData.confirmPass) {
-      toast.current.show({ severity: 'error', summary: 'Error', detail: 'Las contraseñas no coinciden' });
-      return;
-    }
-
-    // Validate driver-specific fields
-    if (formData.isDriver) {
-      if (!formData.licenseNumber || !formData.vehicleBrand || !formData.vehicleModel ||
-          !formData.vehicleYear || !formData.vehiclePlate || !formData.vehicleColor) {
-        toast.current.show({ severity: 'error', summary: 'Error',
-          detail: 'Todos los campos de conductor son obligatorios' });
-        return;
-      }
-
-      if (!formData.driverDocument) {
-        toast.current.show({ severity: 'error', summary: 'Error',
-          detail: 'Debes cargar la constancia de no antecedentes penales (PDF)' });
-        return;
-      }
-
-      if (formData.driverDocument.type !== 'application/pdf') {
-        toast.current.show({ severity: 'error', summary: 'Error',
-          detail: 'El documento debe ser un archivo PDF' });
-        return;
-      }
-
-      if (formData.driverDocument.size > 5 * 1024 * 1024) {
-        toast.current.show({ severity: 'error', summary: 'Error',
-          detail: 'El archivo no debe superar los 5MB' });
-        return;
-      }
+    if (formData.isDriver && currentStep === 2) {
+      if (!validateStep2()) return;
+    } else {
+      if (!validateStep1()) return;
     }
 
     setLoading(true);
@@ -84,7 +125,7 @@ export default function RegisterForm() {
         email: formData.email,
         phoneNumber: formData.telefono,
         password: formData.pass,
-        isDriver: formData.isDriver
+        isDriver: formData.isDriver,
       };
 
       const response = await register(payload);
@@ -98,48 +139,28 @@ export default function RegisterForm() {
             year: parseInt(formData.vehicleYear, 10),
             plate: formData.vehiclePlate.toUpperCase(),
             color: formData.vehicleColor,
-            active: true
+            active: true,
           };
 
-          await completeDriverRegistration(
-            response.userId,
-            formData.licenseNumber,
-            vehicleData,
-            formData.driverDocument
-          );
+          await completeDriverRegistration(response.userId, formData.licenseNumber, vehicleData, formData.driverDocument);
 
-          toast.current.show({ severity: 'success', summary: 'Éxito',
-            detail: 'Registro de conductor completado. Tu cuenta está pendiente de aprobación.' });
+          toast.current.show({ severity: 'success', summary: 'Éxito', detail: 'Registro completado. Tu cuenta está pendiente de aprobación.' });
           setTimeout(() => navigate('/login'), 3000);
         } catch (driverError) {
-          toast.current.show({ severity: 'warn', summary: 'Registro Parcial',
-            detail: `Usuario creado pero falló el registro de conductor: ${driverError.message}. Contacta al administrador.` });
+          console.error(driverError);
+          toast.current.show({ severity: 'warn', summary: 'Registro Parcial', detail: 'Usuario creado pero hubo un error guardando datos del conductor.' });
           setTimeout(() => navigate('/login'), 4000);
         }
       } else {
-        toast.current.show({ severity: 'success', summary: 'Éxito',
-          detail: response.message || 'Cuenta creada correctamente' });
+        toast.current.show({ severity: 'success', summary: 'Éxito', detail: 'Cuenta creada correctamente' });
         setTimeout(() => navigate('/login'), 2000);
       }
     } catch (error) {
-      toast.current.show({ severity: 'error', summary: 'Error',
-        detail: error.message || 'Error al registrar' });
+      console.error(error);
+      toast.current.show({ severity: 'error', summary: 'Error', detail: error.message || 'Error al registrar usuario' });
     } finally {
       setLoading(false);
     }
-  };
-
-  const isFormValid = () => {
-    const basicFields = formData.nombre && formData.apPaterno && formData.telefono && formData.usuario && formData.email && formData.pass && formData.confirmPass;
-    
-    if (!basicFields) return false;
-    
-    if (formData.isDriver) {
-      const driverFields = formData.licenseNumber && formData.vehicleBrand && formData.vehicleModel && formData.vehicleYear && formData.vehiclePlate && formData.vehicleColor && formData.driverDocument;
-      return driverFields;
-    }
-    
-    return true;
   };
 
   return (
@@ -147,134 +168,252 @@ export default function RegisterForm() {
       <Toast ref={toast} />
       <div className="col-12 col-lg-8">
         <div className="card border-0 shadow-lg">
-          <div className="card-body p-4 p-lg-5">
-            <h5 className="card-title fw-bold mb-4">Crea una cuenta</h5>
+          <div className="card-body p-4 px-1 p-lg-5 px-lg-3">
+            <h4 className="card-title fw-bold mb-4 text-center">Crea una cuenta</h4>
 
-            <form className="row g-3" onSubmit={handleSubmit}>
-              {/* ... existing fields ... */}
-              <div className="col-12 col-md-6">
-                <div className="form-floating">
-                  <input type="text" className="form-control" id="nombre" placeholder="Nombre" autoComplete="off" value={formData.nombre} onChange={handleChange} required />
-                  <label htmlFor="nombre">Nombre</label>
-                </div>
-              </div>
-
-              <div className="col-12 col-md-6">
-                <div className="form-floating">
-                  <input type="text" className="form-control" id="apPaterno" placeholder="Apellido paterno" autoComplete="off" value={formData.apPaterno} onChange={handleChange} required />
-                  <label htmlFor="apPaterno">Apellido paterno</label>
-                </div>
-              </div>
-
-              <div className="col-12 col-md-6">
-                <div className="form-floating">
-                  <input type="text" className="form-control" id="apMaterno" placeholder="Apellido materno" autoComplete="off" value={formData.apMaterno} onChange={handleChange} />
-                  <label htmlFor="apMaterno">Apellido materno</label>
-                </div>
-              </div>
-
-              <div className="col-12 col-md-6">
-                <div className="form-floating">
-                  <input type="tel" className="form-control" id="telefono" placeholder="Número telefónico" autoComplete="off" value={formData.telefono} onChange={handleChange} required pattern="[0-9]{10}" title="10 dígitos numéricos" />
-                  <label htmlFor="telefono">Número telefónico</label>
-                </div>
-              </div>
-
-              <div className="col-12 col-md-6">
-                <div className="form-floating">
-                  <input type="text" className="form-control" id="usuario" placeholder="Usuario" autoComplete="off" value={formData.usuario} onChange={handleChange} required />
-                  <label htmlFor="usuario">Usuario</label>
-                </div>
-              </div>
-
-              <div className="col-12 col-md-6">
-                <div className="form-floating">
-                  <input type="email" className="form-control" id="email" placeholder="Correo electrónico" autoComplete="off" value={formData.email} onChange={handleChange} required />
-                  <label htmlFor="email">Correo electrónico</label>
-                </div>
-              </div>
-
-              <div className="col-12 col-md-6">
-                <PasswordInput id="pass" label="Contraseña" placeholder="Contraseña" value={formData.pass} onChange={handleChange} />
-              </div>
-
-              <div className="col-12 col-md-6">
-                <PasswordInput id="confirmPass" label="Confirmar contraseña" placeholder="Confirmar contraseña" value={formData.confirmPass} onChange={handleChange} />
-              </div>
-
-              <div className="col-12 d-flex align-items-center mt-3">
-                <InputSwitch checked={formData.isDriver} onChange={(e) => setFormData(prev => ({ ...prev, isDriver: e.value }))} className="me-2" />
-                <span className="text-muted fw-semibold">Quiero ser conductor</span>
-              </div>
-
-              {/* Driver-specific fields - shown only when isDriver is true */}
-              {formData.isDriver && (
-                <>
-                  <div className="col-12 mt-4">
-                    <h6 className="text-muted fw-bold mb-3">Información del Conductor</h6>
-                  </div>
-
-                  <div className="col-12 col-md-6">
-                    <div className="form-floating">
-                      <input type="text" className="form-control" id="licenseNumber" placeholder="Número de licencia" autoComplete="off" value={formData.licenseNumber} onChange={handleChange} required={formData.isDriver} />
-                      <label htmlFor="licenseNumber">Número de licencia</label>
+            {/* Scrollable Form Container */}
+            <div style={{ overflowY: 'auto', maxHeight: '60vh', paddingRight: '5px', overflowX: 'hidden' }} className="custom-scrollbar mb-3">
+              <form onSubmit={handleSubmit} className="row g-3 mx-0">
+                {/* STEP 1: Basic Info */}
+                {currentStep === 1 && (
+                  <>
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="nombre" placeholder="Nombre" value={formData.nombre} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="nombre" className="text-secondary">
+                          Nombre <span className="text-danger">*</span>
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="col-12 mt-3">
-                    <h6 className="text-muted fw-bold mb-3">Datos del Vehículo</h6>
-                  </div>
-
-                  <div className="col-12 col-md-6">
-                    <div className="form-floating">
-                      <input type="text" className="form-control" id="vehicleBrand" placeholder="Marca" autoComplete="off" value={formData.vehicleBrand} onChange={handleChange} required={formData.isDriver} />
-                      <label htmlFor="vehicleBrand">Marca</label>
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="apPaterno" placeholder="Apellido paterno" value={formData.apPaterno} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="apPaterno" className="text-secondary">
+                          Apellido paterno <span className="text-danger">*</span>
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="col-12 col-md-6">
-                    <div className="form-floating">
-                      <input type="text" className="form-control" id="vehicleModel" placeholder="Modelo" autoComplete="off" value={formData.vehicleModel} onChange={handleChange} required={formData.isDriver} />
-                      <label htmlFor="vehicleModel">Modelo</label>
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="apMaterno" placeholder="Apellido materno" value={formData.apMaterno} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="apMaterno" className="text-secondary">
+                          Apellido materno
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="col-12 col-md-4">
-                    <div className="form-floating">
-                      <input type="number" className="form-control" id="vehicleYear" placeholder="Año" autoComplete="off" value={formData.vehicleYear} onChange={handleChange} required={formData.isDriver} min="1900" max="2030" />
-                      <label htmlFor="vehicleYear">Año</label>
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="tel" className="form-control" id="telefono" placeholder="Teléfono" value={formData.telefono} onChange={handleChange} maxLength={10} autoComplete="off" />
+                        <label htmlFor="telefono" className="text-secondary">
+                          Teléfono <span className="text-danger">*</span>
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="col-12 col-md-4">
-                    <div className="form-floating">
-                      <input type="text" className="form-control" id="vehiclePlate" placeholder="Placa" autoComplete="off" value={formData.vehiclePlate} onChange={handleChange} required={formData.isDriver} style={{ textTransform: 'uppercase' }} />
-                      <label htmlFor="vehiclePlate">Placa</label>
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="usuario" placeholder="Usuario" value={formData.usuario} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="usuario" className="text-secondary">
+                          Usuario <span className="text-danger">*</span>
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="col-12 col-md-4">
-                    <div className="form-floating">
-                      <input type="text" className="form-control" id="vehicleColor" placeholder="Color" autoComplete="off" value={formData.vehicleColor} onChange={handleChange} required={formData.isDriver} />
-                      <label htmlFor="vehicleColor">Color</label>
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="email" className="form-control" id="email" placeholder="Correo electrónico" value={formData.email} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="email" className="text-secondary">
+                          Correo electrónico <span className="text-danger">*</span>
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="col-12 mt-3">
-                    <h6 className="text-muted fw-bold mb-3">Constancia de No Antecedentes Penales</h6>
-                  </div>
+                    <div className="col-12 col-md-6">
+                      <PasswordInput
+                        id="pass"
+                        label={
+                          <>
+                            Contraseña <span className="text-danger">*</span>
+                          </>
+                        }
+                        placeholder="Contraseña"
+                        value={formData.pass}
+                        onChange={handleChange}
+                      />
+                    </div>
 
-                  <div className="col-12">
-                    <FileUpload mode="basic" name="driverDocument" accept="application/pdf" maxFileSize={5000000} chooseLabel="Seleccionar PDF" onSelect={(e) => setFormData(prev => ({ ...prev, driverDocument: e.files[0] }))} onClear={() => setFormData(prev => ({ ...prev, driverDocument: null }))} auto={false} customUpload />
-                    <small className="text-muted">Máximo 5MB, solo formato PDF</small>
-                  </div>
-                </>
-              )}
+                    <div className="col-12 col-md-6">
+                      <PasswordInput
+                        id="confirmPass"
+                        label={
+                          <>
+                            Confirmar contraseña <span className="text-danger">*</span>
+                          </>
+                        }
+                        placeholder="Confirmar contraseña"
+                        value={formData.confirmPass}
+                        onChange={handleChange}
+                      />
+                    </div>
 
-              <div className="col-12 mt-4 text-end">
-                <Button label="Crear Cuenta" className="btn-lime px-5" type="submit" loading={loading} disabled={loading || !isFormValid()} />
+                    {/* Password Mismatch Alert - Centered */}
+                    {formData.pass && formData.confirmPass && formData.pass !== formData.confirmPass && (
+                      <div className="col-12 text-center mt-2">
+                        <small className="text-danger fw-bold px-3 py-1 rounded" style={{ backgroundColor: 'rgba(220, 53, 69, 0.1)' }}>
+                          <i className="pi pi-times-circle me-1"></i>Las contraseñas no coinciden
+                        </small>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* STEP 2: Driver Info */}
+                {currentStep === 2 && (
+                  <>
+                    <div className="col-12">
+                      <h6 className="fw-bold text-secondary mb-3 border-bottom pb-2">Información de Conductor</h6>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="licenseNumber" placeholder="Licencia" value={formData.licenseNumber} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="licenseNumber" className="text-secondary">
+                          No. Licencia <span className="text-danger">*</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Moved Document Input Here - Stacks on mobile, side-by-side on md+ */}
+                    <div className="col-12 col-md-6">
+                      <input type="file" ref={fileInputRef} accept="application/pdf" style={{ display: 'none' }} onChange={handleFileChange} />
+
+                      <div
+                        className={`d-flex align-items-center justify-content-center p-2 border rounded cursor-pointer h-100 ${formData.driverDocument ? 'bg-light border-success' : 'bg-white'}`}
+                        onClick={handleFileClick}
+                        style={{ cursor: 'pointer', borderStyle: 'dashed !important', minHeight: '58px' }}
+                        title="Subir documento"
+                      >
+                        <div className="d-flex align-items-center gap-2 text-center w-100 justify-content-center">
+                          <Icon path={formData.driverDocument ? mdiFilePdfBox : mdiFileUpload} size={1.2} color={formData.driverDocument ? 'var(--color-red-tint-1)' : 'gray'} className="flex-shrink-0" />
+                          <div className="d-flex flex-column overflow-hidden">
+                            <span className="fw-semibold text-dark small text-truncate" style={{ maxWidth: '100%' }}>
+                              {formData.driverDocument ? formData.driverDocument.name : 'Sube tu constancia de No Antecedentes penales en PDF, 5MB Max'}
+                            </span>
+                            {formData.driverDocument && <small className="text-success x-small">Archivo cargado</small>}
+                          </div>
+                          {formData.driverDocument && <Icon path={mdiCloseCircle} size={0.8} color="gray" className="ms-1 flex-shrink-0" />}
+                        </div>
+                      </div>
+                      {!formData.driverDocument && (
+                        <small className="text-muted x-small ms-1">
+                          Formato PDF, Máx 5MB <span className="text-danger">*</span>
+                        </small>
+                      )}
+                    </div>
+
+                    <div className="col-12 mt-4">
+                      <h6 className="fw-bold text-secondary mb-3 border-bottom pb-2">Datos del Vehículo</h6>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="vehicleBrand" placeholder="Marca" value={formData.vehicleBrand} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="vehicleBrand" className="text-secondary">
+                          Marca <span className="text-danger">*</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="vehicleModel" placeholder="Modelo" value={formData.vehicleModel} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="vehicleModel" className="text-secondary">
+                          Modelo <span className="text-danger">*</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-4">
+                      <div className="form-floating">
+                        <input type="number" className="form-control" id="vehicleYear" placeholder="Año" value={formData.vehicleYear} onChange={handleChange} min="1900" max="2030" autoComplete="off" />
+                        <label htmlFor="vehicleYear" className="text-secondary">
+                          Año <span className="text-danger">*</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-4">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="vehiclePlate" placeholder="Placa" value={formData.vehiclePlate} onChange={handleChange} style={{ textTransform: 'uppercase' }} autoComplete="off" />
+                        <label htmlFor="vehiclePlate" className="text-secondary">
+                          Placa <span className="text-danger">*</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-4">
+                      <div className="form-floating">
+                        <input type="text" className="form-control" id="vehicleColor" placeholder="Color" value={formData.vehicleColor} onChange={handleChange} autoComplete="off" />
+                        <label htmlFor="vehicleColor" className="text-secondary">
+                          Color <span className="text-danger">*</span>
+                        </label>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </form>
+            </div>
+
+            {/* Footer Actions - Responsive Stacking */}
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-2 border-top gap-3">
+              {/* Left Side: Switch (only on Step 1) OR Back Button (Step 2) */}
+              <div className="w-100 w-md-auto order-2 order-md-1 text-center text-md-start">
+                {currentStep === 1 ? (
+                  <div className="d-flex align-items-center justify-content-center justify-content-md-start p-2 rounded bg-light-subtle">
+                    <InputSwitch checked={formData.isDriver} onChange={(e) => setFormData((prev) => ({ ...prev, isDriver: e.value }))} className="me-2" />
+                    <span className={`fw-semibold ${formData.isDriver ? 'text-primary' : 'text-secondary'}`}>Quiero ser conductor</span>
+                  </div>
+                ) : (
+                  <Button className="p-button-rounded p-button-outlined p-button-secondary" label="Atrás" tooltip="Atrás" tooltipOptions={{ position: 'top' }} onClick={handleBack} />
+                )}
               </div>
-            </form>
+
+              {/* Right Side: Main Action Button */}
+              <div className="w-100 w-md-auto order-1 order-md-2">
+                {formData.isDriver && currentStep === 1 ? (
+                  <Button label="Continuar" className="btn-lime px-5 rounded-pill w-100 w-md-auto" onClick={handleContinue} />
+                ) : (
+                  <Button label="Crear Cuenta" className="btn-lime px-5 rounded-pill w-100 w-md-auto" onClick={handleSubmit} loading={loading} disabled={loading} />
+                )}
+              </div>
+            </div>
+
+            {/* Step Indicators (Carousel style) - Only if isDriver is true */}
+            {formData.isDriver && (
+              <div className="d-flex justify-content-center gap-2 mt-3">
+                <div
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: currentStep === 1 ? 'var(--color-lime-shade-2)' : '#dee2e6',
+                    transition: 'background-color 0.3s',
+                  }}
+                />
+                <div
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: currentStep === 2 ? 'var(--color-lime-shade-2)' : '#dee2e6',
+                    transition: 'background-color 0.3s',
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
