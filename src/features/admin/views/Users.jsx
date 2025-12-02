@@ -4,10 +4,10 @@ import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
+import { ProgressSpinner } from 'primereact/progressspinner';
 import Icon from '@mdi/react';
 import { mdiMagnify } from '@mdi/js';
 import DataTable from '../components/DataTable';
-import Pagination from '../components/Pagination';
 import { UserService } from '../../../api/user/user.service';
 
 // Admin users management view
@@ -17,10 +17,6 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(15);
 
   // Dialog state
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -181,7 +177,13 @@ export default function Users() {
 
       {/* Users List Section */}
       <div className="mb-3">
-        <DataTable data={filteredUsers} onEdit={handleEdit} onToggleStatus={handleToggleStatus} />
+        {loading ? (
+          <div className="d-flex justify-content-center py-5">
+            <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="4" />
+          </div>
+        ) : (
+          <DataTable data={filteredUsers} onEdit={handleEdit} onToggleStatus={handleToggleStatus} />
+        )}
       </div>
 
       {/* Edit User Dialog - Responsive without scrollbar */}
