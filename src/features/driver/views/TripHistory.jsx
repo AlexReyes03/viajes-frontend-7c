@@ -13,6 +13,7 @@ import MapView from '../../../components/global/MapView';
 import { useAuth } from '../../../contexts/AuthContext';
 import * as TripService from '../../../api/trip/trip.service';
 import * as RatingService from '../../../api/rating/rating.service';
+import useTariff from '../../../hooks/useTariff';
 
 /**
  * TripHistory - Driver Trip History View
@@ -20,6 +21,7 @@ import * as RatingService from '../../../api/rating/rating.service';
  */
 export default function TripHistory() {
   const { user } = useAuth();
+  const { tariff } = useTariff();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -71,24 +73,24 @@ export default function TripHistory() {
             destination: t.destinationAddress || t.destination,
             date: new Date(t.createdAt || t.updatedAt || Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
             time: new Date(t.createdAt || t.updatedAt || Date.now()).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
-            amount: t.fare,
+            amount: tariff?.tariffValue || 0,
             currency: 'MXN',
-            origin: { 
-                lat: t.originLatitude || 0, 
-                lng: t.originLongitude || 0, 
-                name: t.originAddress || t.origin 
+            origin: {
+                lat: t.originLatitude || 0,
+                lng: t.originLongitude || 0,
+                name: t.originAddress || t.origin
             },
-            destinationCoords: { 
-                lat: t.destinationLatitude || 0, 
-                lng: t.destinationLongitude || 0, 
-                name: t.destinationAddress || t.destination 
+            destinationCoords: {
+                lat: t.destinationLatitude || 0,
+                lng: t.destinationLongitude || 0,
+                name: t.destinationAddress || t.destination
             },
             passengerName: t.clientName || 'Pasajero',
             rating: t.rating || 0, // Default fallback, updated on view
             fullDate: t.createdAt || t.updatedAt
         }))
         .sort((a, b) => new Date(b.fullDate) - new Date(a.fullDate));
-  }, [historyData.trips]);
+  }, [historyData.trips, tariff]);
 
     // Handle auto-open from Dashboard
   useEffect(() => {
