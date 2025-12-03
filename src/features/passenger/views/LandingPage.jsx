@@ -4,6 +4,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useWebSocket } from '../../../hooks/useWebSocket';
 import * as TripService from '../../../api/trip/trip.service';
 import * as RatingService from '../../../api/rating/rating.service';
+import * as GeocodingService from '../../../services/geocodingService';
 import Icon from '@mdi/react';
 import { mdiAccountQuestion, mdiWallet, mdiBell, mdiFlash, mdiHistory, mdiMessageText, mdiStar } from '@mdi/js';
 import { Avatar } from 'primereact/avatar';
@@ -50,7 +51,7 @@ const RecentTripItem = ({ destination, date, onClick }) => (
               <small className="text-muted">{date}</small>
           </div>
       </div>
-      <div className="flex-shrink-0 ms-2">
+      <div className="flex-shrink-0 ms-2">1
            <i className="pi pi-chevron-right text-secondary" style={{ fontSize: '0.9rem' }}></i>
       </div>
   </div>
@@ -84,7 +85,12 @@ export default function LandingPage() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(false);
   const [isLocating, setIsLocating] = useState(true);
-  
+
+  // Estados de geocoding
+  const [isGeocodingOrigin, setIsGeocodingOrigin] = useState(false);
+  const [isGeocodingDestination, setIsGeocodingDestination] = useState(false);
+  const [geocodingError, setGeocodingError] = useState(null);
+
   // Historial reciente
   const [lastCompletedTrip, setLastCompletedTrip] = useState(null);
   const [passengerRating, setPassengerRating] = useState(user?.rating || null);
@@ -405,13 +411,6 @@ export default function LandingPage() {
   };
 
   // --- Helpers Mapa ---
-  const mockReverseGeocode = (lat, lng) => {
-    const streets = ['Av. Universidad Tecnológica', 'Calle 5 de Mayo', 'Blvd. Emiliano Zapata', 'Calle Reforma', 'Av. Constitución', 'Privada de los Pinos', 'Camino Real', 'Calle Niños Héroes'];
-    const streetIndex = Math.floor(Math.abs(lng * 10000) % streets.length);
-    const number = Math.floor(Math.abs(lat * 100000) % 500) + 1;
-    return `${streets[streetIndex]} #${number}, Emiliano Zapata`;
-  };
-
   // Handlers selección mapa
   const handleSelectOriginLocation = () => {
     if (originCoords) {
@@ -452,31 +451,88 @@ export default function LandingPage() {
     });
   };
 
-  const handleConfirmSelection = (position) => {
+  const handleConfirmSelection = async (position) => {
     const coordString = `${position[0].toFixed(7)}, ${position[1].toFixed(7)}`;
-    const address = mockReverseGeocode(position[0], position[1]);
-    const displayValue = `${address} (${coordString})`;
 
+    // Set loading state based on selection mode
     if (selectionMode === 'origin') {
-      setOriginCoords(position);
-      setOriginValue(displayValue);
-      setSelectionMode('none');
+      setIsGeocodingOrigin(true);
     } else if (selectionMode === 'destination') {
-      setDestinationCoords(position);
-      setDestinationValue(displayValue);
-      if (!originCoords) {
-        setTimeout(() => {
-          setSelectionMode('origin');
-          setTempMarker(null);
-          if (mapRef.current && mapRef.current.recenter) mapRef.current.recenter();
-        }, 100);
-        return;
-      } else {
-        setSelectionMode('none');
-      }
+      setIsGeocodingDestination(true);
     }
-    setTempMarker(null);
-    setShowTripCard(true);
+
+    // Clear any previous geocoding errors
+    setGeocodingError(null);
+
+    try {
+      // Get address from Nominatim API
+      const address = await GeocodingService.reverseGeocode(position[0], position[1]);
+      const displayValue = `${address} (${coordString})`;
+
+      if (selectionMode === 'origin') {
+        setOriginCoords(position);
+        setOriginValue(displayValue);
+        setIsGeocodingOrigin(false);
+        setSelectionMode('none');
+      } else if (selectionMode === 'destination') {
+        setDestinationCoords(position);
+        setDestinationValue(displayValue);
+        setIsGeocodingDestination(false);
+
+        // If no origin, prompt for origin selection
+        if (!originCoords) {
+          setTimeout(() => {
+            setSelectionMode('origin');
+            setTempMarker(null);
+            if (mapRef.current && mapRef.current.recenter) mapRef.current.recenter();
+          }, 100);
+          return;
+        } else {
+          setSelectionMode('none');
+        }
+      }
+
+      setTempMarker(null);
+      setShowTripCard(true);
+    } catch (error) {
+      console.error('Error geocoding location:', error);
+      setGeocodingError('No se pudo obtener la dirección');
+
+      // Still set coordinates even if geocoding fails
+      const fallbackDisplay = `Ubicación (${coordString})`;
+
+      if (selectionMode === 'origin') {
+        setOriginCoords(position);
+        setOriginValue(fallbackDisplay);
+        setIsGeocodingOrigin(false);
+        setSelectionMode('none');
+      } else if (selectionMode === 'destination') {
+        setDestinationCoords(position);
+        setDestinationValue(fallbackDisplay);
+        setIsGeocodingDestination(false);
+
+        if (!originCoords) {
+          setTimeout(() => {
+            setSelectionMode('origin');
+            setTempMarker(null);
+            if (mapRef.current && mapRef.current.recenter) mapRef.current.recenter();
+          }, 100);
+          return;
+        } else {
+          setSelectionMode('none');
+        }
+      }
+
+      setTempMarker(null);
+      setShowTripCard(true);
+
+      // Show error toast
+      toast.current?.show({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'No se pudo obtener la dirección exacta. Se usarán las coordenadas.'
+      });
+    }
   };
 
   const handleCancelSelection = () => {
@@ -564,13 +620,28 @@ export default function LandingPage() {
                 />
 
                 {selectionMode !== 'none' && !tempMarker && (
-                  <div 
-                    className="position-absolute top-0 start-50 translate-middle-x mt-3 bg-dark text-white px-3 py-2 rounded-pill shadow-sm text-center" 
+                  <div
+                    className="position-absolute top-0 start-50 translate-middle-x mt-3 bg-dark text-white px-3 py-2 rounded-pill shadow-sm text-center"
                     style={{ zIndex: 1000, opacity: 0.9, maxWidth: '90%', width: 'max-content' }}
                   >
                     <small className="fw-bold d-block text-truncate" style={{ whiteSpace: 'normal' }}>
                       {selectionMode === 'origin' ? 'Toca en el mapa para definir el Origen' : 'Toca en el mapa para definir el Destino'}
                     </small>
+                  </div>
+                )}
+
+                {/* Loading overlay when geocoding */}
+                {(isGeocodingOrigin || isGeocodingDestination) && (
+                  <div
+                    className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50"
+                    style={{ zIndex: 1000 }}
+                  >
+                    <div className="bg-white rounded-3 p-4 shadow-lg text-center">
+                      <div className="spinner-border text-primary mb-2" role="status">
+                        <span className="visually-hidden">Cargando...</span>
+                      </div>
+                      <p className="mb-0 fw-semibold">Obteniendo dirección...</p>
+                    </div>
                   </div>
                 )}
               </div>
