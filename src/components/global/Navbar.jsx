@@ -4,7 +4,7 @@ import { Avatar } from 'primereact/avatar';
 import { Menu } from 'primereact/menu';
 import { useAuth } from '../../contexts/AuthContext';
 
-import Logo from '../../assets/img/logo.png';
+import Logo from '../../assets/img/Logo.png';
 
 export default function Navbar({ variant = 'login', user = {} }) {
   const menuRight = useRef(null);
