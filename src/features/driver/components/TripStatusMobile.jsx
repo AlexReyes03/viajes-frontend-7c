@@ -2,12 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'primereact/button';
 import { Avatar } from 'primereact/avatar';
+import { InputTextarea } from 'primereact/inputtextarea';
 import { Rating } from 'primereact/rating';
 import Icon from '@mdi/react';
 import { mdiCrosshairsGps, mdiHome, mdiCash, mdiStar } from '@mdi/js';
 import useTariff from '../../../hooks/useTariff';
+import CancelTripModal from '../../../components/global/CancelTripModal';
 
-export default function TripStatusMobile({ 
+export default function TripStatusMobile({
     tripState = 'request',
     tripData = null,
     onAccept,
@@ -18,9 +20,11 @@ export default function TripStatusMobile({
     onCompleteTrip,
     onClose,
     onHide,
-    onRate
+    onRate,
+    onCancelTrip
 }) {
     const [loadingAction, setLoadingAction] = React.useState(null);
+    const [showCancelModal, setShowCancelModal] = React.useState(false);
     const { tariff } = useTariff();
 
     React.useEffect(() => {
@@ -35,6 +39,13 @@ export default function TripStatusMobile({
         } catch (error) {
             console.error(error);
             setLoadingAction(null);
+        }
+    };
+
+    const handleCancelWithReason = async (reason) => {
+        if (onCancelTrip) {
+            await handleAction('cancel', () => onCancelTrip(reason));
+            setShowCancelModal(false);
         }
     };
     
@@ -132,17 +143,24 @@ export default function TripStatusMobile({
                 <Icon path={mdiCrosshairsGps} size={0.8} />
                 <small className="fw-semibold" style={{ fontSize: '0.8rem' }}>Dirígete al punto de recogida.</small>
             </div>
-            
+
             <p className="small text-muted mb-2 fw-bold">Pasajero</p>
             <PassengerInfo />
 
             <Button
                 label="Llegué al punto"
-                className="w-100 btn-lime py-2 mt-3 fs-6 border-0"
+                className="w-100 btn-lime py-2 mt-3 fs-6 border-0 mb-2"
                 icon="pi pi-map-marker"
                 onClick={() => handleAction('notify', onNotifyArrival)}
                 disabled={loadingAction !== null}
                 loading={loadingAction === 'notify'}
+            />
+
+            <Button
+                label="Cancelar Viaje"
+                className="w-100 p-button-danger p-button-outlined py-2 fs-6"
+                onClick={() => setShowCancelModal(true)}
+                disabled={loadingAction !== null}
             />
         </>
     );
@@ -154,17 +172,24 @@ export default function TripStatusMobile({
                 <Icon path={mdiCrosshairsGps} size={0.8} className="text-success" />
                 <small className="fw-semibold text-success" style={{ fontSize: '0.8rem' }}>Has notificado tu llegada.</small>
             </div>
-            
+
             <p className="small text-muted mb-2 fw-bold">Pasajero</p>
             <PassengerInfo />
 
             <Button
                 label="Confirmar Inicio"
-                className="w-100 btn-lime py-2 mt-3 fs-6 border-0"
+                className="w-100 btn-lime py-2 mt-3 fs-6 border-0 mb-2"
                 icon="pi pi-check"
                 onClick={() => handleAction('start', onStartTrip)}
                 disabled={loadingAction !== null}
                 loading={loadingAction === 'start'}
+            />
+
+            <Button
+                label="Cancelar Viaje"
+                className="w-100 p-button-danger p-button-outlined py-2 fs-6"
+                onClick={() => setShowCancelModal(true)}
+                disabled={loadingAction !== null}
             />
         </>
     );
@@ -181,10 +206,17 @@ export default function TripStatusMobile({
             <div className="mt-4">
                 <Button
                     label="Llegada al Destino"
-                    className="w-100 btn-lime py-2 fs-5 border-0"
+                    className="w-100 btn-lime py-2 fs-5 border-0 mb-2"
                     onClick={() => handleAction('dropoff', onArriveDropoff)}
                     disabled={loadingAction !== null}
                     loading={loadingAction === 'dropoff'}
+                />
+
+                <Button
+                    label="Cancelar Viaje"
+                    className="w-100 p-button-danger p-button-outlined py-2 fs-6"
+                    onClick={() => setShowCancelModal(true)}
+                    disabled={loadingAction !== null}
                 />
             </div>
         </>
@@ -201,18 +233,28 @@ export default function TripStatusMobile({
             <p className="small text-muted mb-2 fw-bold">Cobro pendiente</p>
             <PaymentDetails />
 
-                  <Button
-                    label="Confirmar Finalización"
-                    className="w-100 btn-lime py-2 mt-3 fs-6 border-0"
-                    icon="pi pi-check-circle"
-                    onClick={() => handleAction('complete', onCompleteTrip)}
-                    disabled={loadingAction !== null}
-                    loading={loadingAction === 'complete'}
-                  />        </>
+            <Button
+                label="Confirmar Finalización"
+                className="w-100 btn-lime py-2 mt-3 fs-6 border-0 mb-2"
+                icon="pi pi-check-circle"
+                onClick={() => handleAction('complete', onCompleteTrip)}
+                disabled={loadingAction !== null}
+                loading={loadingAction === 'complete'}
+            />
+
+            <Button
+                label="Cancelar Viaje"
+                className="w-100 p-button-danger p-button-outlined py-2 fs-6"
+                onClick={() => setShowCancelModal(true)}
+                disabled={loadingAction !== null}
+            />
+        </>
     );
 
     const FinishedView = () => {
         const [rating, setRating] = React.useState(0);
+        const [comment, setComment] = React.useState('');
+        const MAX_COMMENT_LENGTH = 500;
 
         return (
             <>
@@ -233,10 +275,27 @@ export default function TripStatusMobile({
                     <Rating value={rating} onChange={(e) => setRating(e.value)} cancel={false} stars={5} />
                 </div>
 
+                <div className="mb-3">
+                    <label htmlFor="comment" className="form-label small fw-semibold">Comentario (opcional)</label>
+                    <InputTextarea
+                        id="comment"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value.slice(0, MAX_COMMENT_LENGTH))}
+                        rows={3}
+                        placeholder="Cuéntanos sobre el pasajero..."
+                        className="w-100"
+                    />
+                    <div className="text-end">
+                        <small className={comment.length > MAX_COMMENT_LENGTH * 0.9 ? 'text-danger' : 'text-muted'}>
+                            {comment.length}/{MAX_COMMENT_LENGTH}
+                        </small>
+                    </div>
+                </div>
+
                 <Button
                     label="Enviar"
                     className="w-100 btn-lime mt-2 py-2 fs-5 border-0"
-                    onClick={() => handleAction('rate', () => onRate(rating))}
+                    onClick={() => handleAction('rate', () => onRate(rating, comment))}
                     disabled={!rating || loadingAction !== null}
                     loading={loadingAction === 'rate'}
                 />
@@ -245,16 +304,25 @@ export default function TripStatusMobile({
     };
 
     return (
-        <div className="card border-0 shadow-sm w-100 mb-3" style={{ borderRadius: '12px' }}>
-            <div className="card-body p-4">
-                {tripState === 'request' && <RequestView />}
-                {tripState === 'pickup' && <PickupView />}
-                {tripState === 'arrived' && <ArrivedView />}
-                {tripState === 'ongoing' && <OngoingView />}
-                {tripState === 'dropoff' && <DropoffView />}
-                {tripState === 'finished' && <FinishedView />}
+        <>
+            <div className="card border-0 shadow-sm w-100 mb-3" style={{ borderRadius: '12px' }}>
+                <div className="card-body p-4">
+                    {tripState === 'request' && <RequestView />}
+                    {tripState === 'pickup' && <PickupView />}
+                    {tripState === 'arrived' && <ArrivedView />}
+                    {tripState === 'ongoing' && <OngoingView />}
+                    {tripState === 'dropoff' && <DropoffView />}
+                    {tripState === 'finished' && <FinishedView />}
+                </div>
             </div>
-        </div>
+
+            <CancelTripModal
+                visible={showCancelModal}
+                onHide={() => setShowCancelModal(false)}
+                onConfirm={handleCancelWithReason}
+                loading={loadingAction === 'cancel'}
+            />
+        </>
     );
 }
 
@@ -269,5 +337,6 @@ TripStatusMobile.propTypes = {
     onCompleteTrip: PropTypes.func,
     onClose: PropTypes.func,
     onHide: PropTypes.func,
-    onRate: PropTypes.func
+    onRate: PropTypes.func,
+    onCancelTrip: PropTypes.func
 };

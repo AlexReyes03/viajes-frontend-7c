@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useTripContext } from '../../../contexts/TripContext';
 import { useWebSocket } from '../../../hooks/useWebSocket';
 import * as TripService from '../../../api/trip/trip.service';
 import * as RatingService from '../../../api/rating/rating.service';
@@ -60,14 +61,23 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useRef(null);
-  
+
   // WebSocket Hook
   const { lastMessage } = useWebSocket();
 
-  // Estados
-  const [tripState, setTripState] = useState('idle'); // idle, request, pickup, ongoing, dropoff, finished
-  const [currentTrip, setCurrentTrip] = useState(null); // Datos del viaje actual o solicitud
-  const [showTripCard, setShowTripCard] = useState(false);
+  // Trip Context (Global State)
+  const {
+    tripState,
+    currentTrip,
+    showTripCard,
+    updateTripState,
+    updateCurrentTrip,
+    resetTrip,
+    startNewTrip,
+    setShowTripCard
+  } = useTripContext();
+
+  // Local Estados
   const [driverLocation, setDriverLocation] = useState([18.8568, -98.7993]); // Mock inicial
   const [recentRatings, setRecentRatings] = useState([]);
   const [driverRating, setDriverRating] = useState(user?.rating || null);
@@ -155,11 +165,9 @@ export default function Dashboard() {
       // Solo mostrar si el conductor está libre
       if (tripStateRef.current === 'idle' || tripStateRef.current === 'finished') {
         console.log('Nueva solicitud recibida:', newTrip);
-        setCurrentTrip(newTrip);
-        setTripState('request');
-        setShowTripCard(true);
+        startNewTrip(newTrip, 'request');
         toast.current?.show({ severity: 'info', summary: 'Nueva solicitud', detail: 'Tienes una nueva solicitud de viaje.' });
-        
+
         // Play notification sound (opcional)
         // new Audio('/notification.mp3').play().catch(e => console.log('Audio play failed', e));
       }
@@ -173,28 +181,26 @@ export default function Dashboard() {
       // Verificar si es el viaje que estamos atendiendo
       if (currentT && tripUpdate.tripId === currentT.tripId) {
         console.log('Actualización de viaje:', tripUpdate);
-        setCurrentTrip(prev => ({ ...prev, ...tripUpdate }));
+        updateCurrentTrip({ ...currentT, ...tripUpdate });
 
         const msgType = lastMessage.message || tripUpdate.message;
 
         if (msgType === 'DROPOFF_ARRIVED') {
-             setTripState('dropoff');
+             updateTripState('dropoff');
              toast.current?.show({ severity: 'info', summary: 'Llegada notificada', detail: 'Has notificado la llegada al destino.' });
         } else if (tripUpdate.status === 'CANCELLED') {
-          setTripState('idle');
-          setShowTripCard(false);
-          setCurrentTrip(null);
+          resetTrip();
           toast.current?.show({ severity: 'warn', summary: 'Viaje cancelado', detail: 'El cliente canceló el viaje.' });
         } else if (tripUpdate.status === 'IN_PROGRESS') {
           // Solo cambiar a ongoing si NO estamos ya en dropoff
           if (tripStateRef.current !== 'dropoff') {
-              setTripState('ongoing');
+              updateTripState('ongoing');
               if (tripStateRef.current !== 'ongoing') {
                  toast.current?.show({ severity: 'success', summary: 'Viaje iniciado', detail: 'El viaje está en curso.' });
               }
           }
         } else if (tripUpdate.status === 'COMPLETED') {
-          setTripState('finished');
+          updateTripState('finished');
           // No cerramos la tarjeta automáticamente, dejamos que el conductor la cierre
         } else if (tripUpdate.clientCompleted && !tripUpdate.driverCompleted) {
            toast.current?.show({ severity: 'info', summary: 'Cliente finalizó', detail: 'El cliente ha confirmado el fin del viaje.' });
@@ -209,28 +215,24 @@ export default function Dashboard() {
 
   const handleAcceptTrip = async () => {
     if (!currentTrip) return;
-    
+
     try {
       // Use user.id directly, backend will handle profile resolution/creation
       await TripService.acceptTrip(currentTrip.tripId, user.id);
-      setTripState('pickup');
+      updateTripState('pickup');
       toast.current?.show({ severity: 'success', summary: 'Aceptado', detail: 'Viaje aceptado. Dirígete al origen.' });
     } catch (error) {
       console.error('Error accepting trip:', error);
       toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo aceptar el viaje (quizás ya fue tomado).' });
-      setTripState('idle');
-      setShowTripCard(false);
-      setCurrentTrip(null);
+      resetTrip();
     }
   };
 
   const handleRejectTrip = async () => {
     if (!currentTrip) return;
-    
+
     try {
-      setTripState('idle');
-      setShowTripCard(false);
-      setCurrentTrip(null);
+      resetTrip();
     } catch (error) {
       console.error('Error rejecting trip:', error);
     }
@@ -238,10 +240,10 @@ export default function Dashboard() {
 
   const handleNotifyArrival = async () => {
     if (!currentTrip) return;
-    
+
     try {
       await TripService.notifyArrival(currentTrip.tripId, user.id);
-      setTripState('arrived');
+      updateTripState('arrived');
       toast.current?.show({ severity: 'info', summary: 'Notificado', detail: 'Has notificado tu llegada al pasajero.' });
     } catch (error) {
       console.error('Error notifying arrival:', error);
@@ -268,7 +270,7 @@ export default function Dashboard() {
       if (!currentTrip) return;
       try {
           await TripService.notifyDropoff(currentTrip.tripId, user.id);
-          setTripState('dropoff'); // Optimistic update
+          updateTripState('dropoff'); // Optimistic update
       } catch (error) {
           console.error('Error notifying dropoff:', error);
           toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo notificar la llegada al destino.' });
@@ -288,20 +290,18 @@ export default function Dashboard() {
   };
 
   const handleCloseFinished = () => {
-      setTripState('idle');
-      setShowTripCard(false);
-      setCurrentTrip(null);
+      resetTrip();
   };
 
-  const handleRatePassenger = async (rating) => {
+  const handleRatePassenger = async (rating, comment) => {
     if (!currentTrip) return;
     try {
       // Driver profile ID is usually user.driverProfileId or derived from user.id
-      const driverId = user.driverProfileId || user.id; 
+      const driverId = user.driverProfileId || user.id;
       await RatingService.rateClient(driverId, {
         tripId: currentTrip.tripId,
         rating: rating,
-        comment: '' // Optional comment
+        comment: comment || ''
       });
       toast.current?.show({ severity: 'success', summary: 'Calificado', detail: 'Calificación enviada exitosamente.' });
       handleCloseFinished();
@@ -309,6 +309,20 @@ export default function Dashboard() {
       console.error('Error rating passenger:', error);
       toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar la calificación.' });
       // Still close on error? Maybe let them retry.
+    }
+  };
+
+  const handleCancelTrip = async (reason) => {
+    if (!currentTrip) return;
+
+    try {
+      // Use rejectTrip endpoint - backend will be updated to allow cancellation at any stage
+      await TripService.rejectTrip(currentTrip.tripId, user.id);
+      resetTrip();
+      toast.current?.show({ severity: 'info', summary: 'Viaje cancelado', detail: 'El viaje ha sido cancelado exitosamente.' });
+    } catch (error) {
+      console.error('Error cancelling trip:', error);
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo cancelar el viaje.' });
     }
   };
 
@@ -324,6 +338,7 @@ export default function Dashboard() {
       onCompleteTrip: handleCompleteTrip,
       onClose: handleCloseFinished,
       onRate: handleRatePassenger,
+      onCancelTrip: handleCancelTrip,
       onHide: () => setShowTripCard(false)
   };
 

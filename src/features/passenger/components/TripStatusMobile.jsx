@@ -2,11 +2,13 @@ import React from 'react';
 import { Button } from 'primereact/button';
 import { Avatar } from 'primereact/avatar';
 import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Rating } from 'primereact/rating';
 import Icon from '@mdi/react';
 import { mdiCrosshairsGps, mdiArrowRight, mdiHome, mdiCash, mdiStar } from '@mdi/js';
 import useTariff from '../../../hooks/useTariff';
+import CancelTripModal from '../../../components/global/CancelTripModal';
 
 export default function TripStatusMobile({ 
   tripState = 'request',
@@ -26,6 +28,7 @@ export default function TripStatusMobile({
   onRate
 }) {
   const [loadingAction, setLoadingAction] = React.useState(null);
+  const [showCancelModal, setShowCancelModal] = React.useState(false);
   const { tariff } = useTariff();
 
   React.useEffect(() => {
@@ -43,6 +46,11 @@ export default function TripStatusMobile({
       }
   };
 
+  const handleCancelWithReason = async (reason) => {
+    await handleAction('cancel', () => onCancelTrip(reason));
+    setShowCancelModal(false);
+  };
+
   const DriverInfo = () => (
     <div className="d-flex align-items-center gap-3 mb-3">
       <Avatar icon="pi pi-user" size="large" shape="circle" className="bg-secondary text-white" />
@@ -57,6 +65,34 @@ export default function TripStatusMobile({
       </div>
     </div>
   );
+
+  const VehicleInfo = () => {
+    if (!tripData?.vehicleBrand) return null;
+
+    return (
+      <div className="card bg-light border-secondary border-opacity-25 mb-3">
+        <div className="card-body p-3">
+          <p className="small text-muted mb-2 fw-bold">Información del vehículo</p>
+          <div className="d-flex flex-column gap-1">
+            <div className="d-flex justify-content-between">
+              <span className="small text-muted">Vehículo:</span>
+              <span className="small fw-semibold">
+                {tripData.vehicleBrand} {tripData.vehicleModel} {tripData.vehicleYear ? `(${tripData.vehicleYear})` : ''}
+              </span>
+            </div>
+            <div className="d-flex justify-content-between">
+              <span className="small text-muted">Placas:</span>
+              <span className="small fw-semibold">{tripData.vehiclePlate}</span>
+            </div>
+            <div className="d-flex justify-content-between">
+              <span className="small text-muted">Color:</span>
+              <span className="small fw-semibold">{tripData.vehicleColor}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const TripDetails = () => (
     <>
@@ -163,12 +199,11 @@ export default function TripStatusMobile({
       </div>
       <p className="text-muted small mb-4">Estamos contactando a los conductores cercanos.</p>
 
-      <Button 
-        label="Cancelar solicitud" 
-        className="p-button-outlined p-button-secondary p-button-sm w-100 mb-2" 
-        onClick={() => handleAction('cancel_search', onCancelTrip)}
+      <Button
+        label="Cancelar solicitud"
+        className="p-button-outlined p-button-secondary p-button-sm w-100 mb-2"
+        onClick={() => setShowCancelModal(true)}
         disabled={loadingAction !== null}
-        loading={loadingAction === 'cancel_search'}
       />
     </div>
   );
@@ -186,13 +221,13 @@ export default function TripStatusMobile({
 
       <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
       <DriverInfo />
-      
-      <Button 
-        label="Cancelar Viaje" 
-        className="w-100 p-button-danger p-button-outlined mt-3 py-2 fs-6" 
-        onClick={() => handleAction('cancel_pickup', onCancelTrip)}
+      <VehicleInfo />
+
+      <Button
+        label="Cancelar Viaje"
+        className="w-100 p-button-danger p-button-outlined mt-3 py-2 fs-6"
+        onClick={() => setShowCancelModal(true)}
         disabled={loadingAction !== null}
-        loading={loadingAction === 'cancel_pickup'}
       />
     </>
   );
@@ -210,12 +245,13 @@ export default function TripStatusMobile({
 
       <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
       <DriverInfo />
+      <VehicleInfo />
 
-      <Button 
-        label="Confirmar Inicio" 
-        className="w-100 btn-lime py-2 mt-3 fs-6 border-0" 
-        icon="pi pi-check" 
-        onClick={() => handleAction('start', onConfirmPickup)} 
+      <Button
+        label="Confirmar Inicio"
+        className="w-100 btn-lime py-2 mt-3 fs-6 border-0"
+        icon="pi pi-check"
+        onClick={() => handleAction('start', onConfirmPickup)}
         disabled={loadingAction !== null}
         loading={loadingAction === 'start'}
       />
@@ -227,6 +263,7 @@ export default function TripStatusMobile({
       <h5 className="fw-bold mb-3">Tu viaje está en curso</h5>
       <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
       <DriverInfo />
+      <VehicleInfo />
 
       <p className="small text-muted mb-2 fw-bold">Detalles del viaje</p>
       <TripDetails />
@@ -265,12 +302,15 @@ export default function TripStatusMobile({
 
   const FinishedView = () => {
     const [rating, setRating] = React.useState(0);
+    const [comment, setComment] = React.useState('');
+    const MAX_COMMENT_LENGTH = 500;
 
     return (
       <>
         <h5 className="fw-bold mb-3">Resumen del Viaje</h5>
         <p className="small text-muted mb-2 fw-bold">Datos del conductor</p>
         <DriverInfo />
+        <VehicleInfo />
 
         <p className="small text-muted mb-2 fw-bold">Detalles del viaje</p>
         <TripDetails />
@@ -283,10 +323,27 @@ export default function TripStatusMobile({
             <Rating value={rating} onChange={(e) => setRating(e.value)} cancel={false} stars={5} />
         </div>
 
+        <div className="mb-3">
+          <label htmlFor="comment" className="form-label small fw-semibold">Comentario (opcional)</label>
+          <InputTextarea
+            id="comment"
+            value={comment}
+            onChange={(e) => setComment(e.target.value.slice(0, MAX_COMMENT_LENGTH))}
+            rows={3}
+            placeholder="Cuéntanos sobre tu experiencia..."
+            className="w-100"
+          />
+          <div className="text-end">
+            <small className={comment.length > MAX_COMMENT_LENGTH * 0.9 ? 'text-danger' : 'text-muted'}>
+              {comment.length}/{MAX_COMMENT_LENGTH}
+            </small>
+          </div>
+        </div>
+
         <Button
           label="Enviar"
           className="w-100 btn-lime mt-2 py-2 fs-5 border-0"
-          onClick={() => handleAction('rate', () => onRate(rating))}
+          onClick={() => handleAction('rate', () => onRate(rating, comment))}
           disabled={!rating || loadingAction !== null}
           loading={loadingAction === 'rate'}
         />
@@ -295,16 +352,25 @@ export default function TripStatusMobile({
   };
 
   return (
-    <div className="card border-0 shadow-sm w-100 mb-3" style={{ borderRadius: '12px' }}>
-      <div className="card-body p-4">
-        {tripState === 'request' && <RequestView />}
-        {tripState === 'searching' && <SearchingView />}
-        {tripState === 'pickup' && <PickupView />}
-        {tripState === 'arrived' && <ArrivedView />}
-        {tripState === 'ongoing' && <OngoingView />}
-        {tripState === 'dropoff' && <DropoffView />}
-        {tripState === 'finished' && <FinishedView />}
+    <>
+      <div className="card border-0 shadow-sm w-100 mb-3" style={{ borderRadius: '12px' }}>
+        <div className="card-body p-4">
+          {tripState === 'request' && <RequestView />}
+          {tripState === 'searching' && <SearchingView />}
+          {tripState === 'pickup' && <PickupView />}
+          {tripState === 'arrived' && <ArrivedView />}
+          {tripState === 'ongoing' && <OngoingView />}
+          {tripState === 'dropoff' && <DropoffView />}
+          {tripState === 'finished' && <FinishedView />}
+        </div>
       </div>
-    </div>
+
+      <CancelTripModal
+        visible={showCancelModal}
+        onHide={() => setShowCancelModal(false)}
+        onConfirm={handleCancelWithReason}
+        loading={loadingAction === 'cancel'}
+      />
+    </>
   );
 }
